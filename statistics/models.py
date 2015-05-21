@@ -19,6 +19,12 @@ class Journal(models.Model):
                                  default=default_stat,
                                  editable=False)
 
+    class Meta:
+        ordering = ['equipment__name']
+
+    def __str__(self):
+        return self.equipment.name
+
 
 class JournalLine(models.Model):
     """
