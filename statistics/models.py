@@ -1,5 +1,7 @@
 from django.db import models
 
+from catalog.models import Unit
+
 
 def default_stat():
     return {"wd": "00:00", "psk": 0, "ost": 0}
@@ -11,7 +13,7 @@ class Journal(models.Model):
     по конкретному оборудованию
     """
 
-    equipment = models.ForeignKey('catalog.Unit')
+    equipment = models.OneToOneField(Unit)
     extended_stat = models.BooleanField(default=False)
     stat_by_parent = models.BooleanField(default=False)
     description = models.TextField(blank=True)
@@ -26,18 +28,20 @@ class Journal(models.Model):
         return self.equipment.name
 
 
-class JournalLine(models.Model):
+DAY = 24
+YEAR = 8760
+LEAP_YEAR = 8784
+PERIOD_IN_CHOICES = (
+    (DAY, 'Сутки'),
+    (YEAR, 'Год'),
+    (LEAP_YEAR, 'Вис. год'),
+)
+
+
+class Record(models.Model):
     """
     Description: Одна строка записи журнала на дату начала периода
     """
-    DAY = 24
-    YEAR = 8760
-    LEAP_YEAR = 8784
-    PERIOD_IN_CHOICES = (
-        (DAY, 'Сутки'),
-        (YEAR, 'Год'),
-        (LEAP_YEAR, 'Вис. год'),
-    )
 
     journal = models.ForeignKey('Journal')
     date = models.DateField()
@@ -47,29 +51,31 @@ class JournalLine(models.Model):
     ostanov_cnt = models.IntegerField(default=0)
 
 
+WORK = 'WRK'
+RESERV = 'RSV'
+TEK_REM = 'TRM'
+AV_REM = 'ARM'
+KAP_REM = 'KRM'
+SR_REM = 'SRM'
+RECONSTRUCTION = 'RCD'
+STATE_CHOICES = (
+    (WORK, 'Работа'),
+    (RESERV, 'Резерв'),
+    (TEK_REM, 'Тек. ремонт'),
+    (AV_REM, 'Ав. ремонт'),
+    (KAP_REM, 'Кап. ремонт'),
+    (SR_REM, 'Сред. ремонт'),
+    (RECONSTRUCTION, 'Реконструкция'),
+)
+
+
 class StateItem(models.Model):
     """
     Description: Ненулевая позиция состояния Оборудования из Журнала.
     Например: ЗЖ | 24:00 | Работа
     """
-    WORK = 'WRK'
-    RESERV = 'RSV'
-    TEK_REM = 'TRM'
-    AV_REM = 'ARM'
-    KAP_REM = 'KRM'
-    SR_REM = 'SRM'
-    RECONSTRUCTION = 'RCD'
-    STATE_CHOICES = (
-        (WORK, 'Работа'),
-        (RESERV, 'Резерв'),
-        (TEK_REM, 'Тек. ремонт'),
-        (AV_REM, 'Ав. ремонт'),
-        (KAP_REM, 'Кап. ремонт'),
-        (SR_REM, 'Сред. ремонт'),
-        (RECONSTRUCTION, 'Реконструкция'),
-    )
 
-    journal_line = models.ForeignKey('JournalLine')
+    record = models.ForeignKey('Record')
     state = models.CharField(max_length=3,
                              choices=STATE_CHOICES,
                              default=WORK,

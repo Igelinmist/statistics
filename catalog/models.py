@@ -13,5 +13,5 @@ class Unit(models.Model):
         return '{0} - {1}'.format(plant_name, self.name)
 
     class Meta:
-        ordering = ['-plant_id']
+        ordering = ['plant_id', 'name']
         verbose_name_plural = "units"

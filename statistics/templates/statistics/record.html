@@ -1,0 +1,12 @@
+<h1>Запись журнала статистики работы для {{ journal.equipment.name }}</h1>
+<form action="{% url 'statistics:record' journal.id%}" method="post">
+    {% csrf_token %}
+    <table>
+        {{ form }}
+        <tr>
+            <th>&nbsp;</th>
+            <td><input type="submit" value="Submit" /></td>
+        </tr>
+    </table>
+    
+</form>

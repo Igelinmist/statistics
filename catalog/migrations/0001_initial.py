@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
                 ('plant', models.ForeignKey(blank=True, to='catalog.Unit', null=True)),
             ],
             options={
-                'ordering': ['-plant_id', '-name'],
+                'ordering': ['plant_id', 'name'],
                 'verbose_name_plural': 'units',
             },
         ),

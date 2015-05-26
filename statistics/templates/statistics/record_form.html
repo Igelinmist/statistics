@@ -1,0 +1,11 @@
+<form action="{% url 'statistics:create' journal.id %}" method="post">
+    {% csrf_token %}
+    <label for="record_date">Дата записи</label>
+    <input type="text" name="date" id="record_date"/><br />
+
+    {% for state in choices %}
+        <label for "{{ state.0 }} ">{{ state.1 }}</label>
+        <input type="text" name="{{state.0}}" id="{{state.0}}"><br />
+    {% endfor %}
+    <input type="submit" value="Применить" />
+</form>

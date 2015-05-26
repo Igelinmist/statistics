@@ -1,7 +1,7 @@
 {% if journal_list %}
     <ul>
     {% for journal in journal_list %}
-        <li><a href="{% url 'statistics:detail' journal.id %}">{{ journal.equipment.name }}</a></li>
+        <li><a href="{% url 'statistics:show' journal.id %}">{{ journal.equipment.name }}</a></li>
     {% endfor %}
     </ul>
 {% else %}

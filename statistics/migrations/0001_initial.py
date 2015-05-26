@@ -8,7 +8,7 @@ import statistics.models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('catalog', '0002_auto_20150521_1116'),
+        ('catalog', '0001_initial'),
     ]
 
     operations = [
@@ -26,13 +26,16 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('extended_stat', models.BooleanField(default=False)),
                 ('stat_by_parent', models.BooleanField(default=False)),
-                ('description', models.TextField()),
+                ('description', models.TextField(blank=True)),
                 ('last_stat', models.CharField(default=statistics.models.default_stat, max_length=100, editable=False)),
-                ('equipment', models.ForeignKey(to='catalog.Unit')),
+                ('equipment', models.OneToOneField(to='catalog.Unit')),
             ],
+            options={
+                'ordering': ['equipment__name'],
+            },
         ),
         migrations.CreateModel(
-            name='JournalLine',
+            name='Record',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('date', models.DateField()),
@@ -48,7 +51,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('state', models.CharField(default='WRK', max_length=3, db_index=True, choices=[('WRK', 'Работа'), ('RSV', 'Резерв'), ('TRM', 'Тек. ремонт'), ('ARM', 'Ав. ремонт'), ('KRM', 'Кап. ремонт'), ('SRM', 'Сред. ремонт'), ('RCD', 'Реконструкция')])),
                 ('time_in_state', models.DurationField()),
-                ('journal_line', models.ForeignKey(to='statistics.JournalLine')),
+                ('record', models.ForeignKey(to='statistics.Record')),
             ],
         ),
         migrations.AddField(
