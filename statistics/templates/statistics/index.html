@@ -1,9 +1,9 @@
-{% if journal_list %}
+{% if journals %}
     <ul>
-    {% for journal in journal_list %}
+    {% for journal in journals %}
         <li><a href="{% url 'statistics:show' journal.id %}">{{ journal.equipment.name }}</a></li>
     {% endfor %}
     </ul>
 {% else %}
-    <p>No journals are available.</p>
+    <p>Не найдено ни одного журнала.</p>
 {% endif %}

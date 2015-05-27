@@ -27,6 +27,19 @@ class Journal(models.Model):
     def __str__(self):
         return self.equipment.name
 
+    def get_record(self, data):
+        new_record = self.record_set.create(
+            date=data['rec_date'],
+            work=data['work'],
+            period_length=int(data['rec_period']),
+            pusk_cnt=int(data['starts']),
+            ostanov_cnt=int(data['stops']),
+        )
+        new_record.stateitem_set.create(
+            state='RSV',
+            time_in_state=data['reserv'],
+        )
+
 
 DAY = 24
 YEAR = 8760
@@ -47,11 +60,16 @@ class Record(models.Model):
     date = models.DateField()
     period_length = models.IntegerField(choices=PERIOD_IN_CHOICES,
                                         default=DAY)
+    work = models.DurationField(default='00:00')
     pusk_cnt = models.IntegerField(default=0)
     ostanov_cnt = models.IntegerField(default=0)
 
+    def __str__(self):
+        return "{0} | {1} | {2}".format(
+            self.date,
+            self.period_length,
+            self.work)
 
-WORK = 'WRK'
 RESERV = 'RSV'
 TEK_REM = 'TRM'
 AV_REM = 'ARM'
@@ -59,7 +77,6 @@ KAP_REM = 'KRM'
 SR_REM = 'SRM'
 RECONSTRUCTION = 'RCD'
 STATE_CHOICES = (
-    (WORK, 'Работа'),
     (RESERV, 'Резерв'),
     (TEK_REM, 'Тек. ремонт'),
     (AV_REM, 'Ав. ремонт'),
@@ -78,7 +95,7 @@ class StateItem(models.Model):
     record = models.ForeignKey('Record')
     state = models.CharField(max_length=3,
                              choices=STATE_CHOICES,
-                             default=WORK,
+                             default=RESERV,
                              db_index=True)
     time_in_state = models.DurationField()
 
