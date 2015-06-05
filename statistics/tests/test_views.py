@@ -18,9 +18,6 @@ def create_record(eq_name='Test equipment'):
         ostanov_cnt=1,
         work=datetime.timedelta(hours=5),
         period_length=24,)
-    rec.stateitem_set.create(
-        state='AVR',
-        time_in_state=datetime.timedelta(hours=19))
     return rec
 
 
@@ -74,3 +71,4 @@ class JournalViewTests(TestCase):
                     kwargs={'journal_id': rec.journal_id, 'record_id': rec.id}))
 
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '05:00:00')
