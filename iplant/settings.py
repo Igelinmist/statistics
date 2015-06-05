@@ -97,10 +97,15 @@ TIME_ZONE = 'Asia/Omsk'
 
 USE_I18N = True
 
-USE_L10N = False
+USE_L10N = True
 
 USE_TZ = True
 
+# Python module path where user will place custom format definition.
+# The directory where this setting is pointing should contain subdirectories
+# named as the locales, containing a formats.py file
+# (i.e. "myproject.locale" for myproject/locale/en/formats.py etc. use)
+FORMAT_MODULE_PATH = 'iplant.formats'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/

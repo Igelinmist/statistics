@@ -1,5 +1,10 @@
-<h1>Запись журнала статистики работы для {{ journal.equipment.name }}</h1>
-<form action="{% url 'statistics:new_record' journal.id%}" method="post">
+{% if record_id %}
+    <h1>Правка записи журнала статистики работы для {{ journal.equipment.name }}</h1>
+    <form action="{% url 'statistics:record_edit' journal.id record_id%}" method="post">
+{% else %}
+    <h1>Запись журнала статистики работы для {{ journal.equipment.name }}</h1>
+    <form action="{% url 'statistics:record_new' journal.id%}" method="post">
+{% endif %}
     {% csrf_token %}
     <table>
         {{ form }}

@@ -1,6 +1,12 @@
 <h1>Журнал статистики {{ journal.equipment.name }}</h1>
 <ul>
     {% for rec in record_list %}
-        <li>{{ rec }}</li>
+        <li>{{ rec.date }} 
+            |
+            <a href="{% url 'statistics:record_edit' journal.id rec.id %}">Править</a>
+            |
+            <a href="{% url 'statistics:record_delete' journal.id rec.id %}">Удалить</a>
+        </li>
     {% endfor %}
 </ul>
+<a href="{% url 'statistics:record_new' journal.id %}">Добавить запись</a>

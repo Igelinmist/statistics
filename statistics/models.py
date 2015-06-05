@@ -1,4 +1,5 @@
 from django.db import models
+from datetime import timedelta
 
 from catalog.models import Unit
 
@@ -27,18 +28,52 @@ class Journal(models.Model):
     def __str__(self):
         return self.equipment.name
 
-    def get_record(self, data):
-        new_record = self.record_set.create(
-            date=data['rec_date'],
-            work=data['work'],
-            period_length=int(data['rec_period']),
-            pusk_cnt=int(data['starts']),
-            ostanov_cnt=int(data['stops']),
-        )
-        new_record.stateitem_set.create(
-            state='RSV',
-            time_in_state=data['reserv'],
-        )
+    def get_data(record_id=None):
+        data = {}
+        if record_id:
+            rec = Record.objects.get(pk=record_id)
+            for name in ('date', 'work', 'period_length',
+                         'ostanov_cnt', 'pusk_cnt'):
+                data[name] = rec.__getattribute__(name)
+            if rec.journal.extended_stat:
+                for state in ('rsv', 'arm', 'trm', 'krm', 'srm', 'rcd'):
+                    data[state] = timedelta(seconds=0)
+                for state_item in rec.stateitem_set.all():
+                    data[state_item.state.lower()] = state_item.time_in_state
+            return data
+        else:
+            return None
+
+    def set_data(journal, data, record_id=None):
+        if record_id:
+            rec = Record.objects.get(pk=record_id)
+            changed_fields = []
+            for name in ('date', 'work', 'period_length',
+                         'ostanov_cnt', 'pusk_cnt'):
+                if rec.__getattribute__(name) != data[name]:
+                    changed_fields.append(name)
+                    rec.__setattr__(name, data[name])
+            if journal.extended_stat:
+                rec.stateitem_set.all().delete()
+                for state_name in ('rsv', 'arm', 'trm', 'krm', 'srm', 'rcd'):
+                    if data[state_name]:
+                        rec.stateitem_set.create(
+                            state=state_name,
+                            time_in_state=data[state_name])
+            rec.save(update_fields=changed_fields)
+        else:
+            new_record = journal.record_set.create(
+                date=data['date'],
+                period_length=data['period_length'],
+                work=data['work'],
+                ostanov_cnt=data['ostanov_cnt'],
+                pusk_cnt=data['pusk_cnt'],)
+            if journal.extended_stat:
+                 for state_name in ('rsv', 'arm', 'trm', 'krm', 'srm', 'rcd'):
+                    if data[state_name]:
+                        new_record.stateitem_set.create(
+                            state=state_name,
+                            time_in_state=data[state_name])
 
 
 DAY = 24
