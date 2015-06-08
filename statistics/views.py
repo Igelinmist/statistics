@@ -23,7 +23,7 @@ def record_create_or_edit(request, journal_id, record_id=None):
     journal = get_object_or_404(Journal, pk=journal_id)
     form = RecordForm(request.POST or Journal.get_data(record_id), journal=journal)
     if request.POST and form.is_valid():
-        Journal.set_data(journal, form.cleaned_data, record_id)
+        journal.set_data(form.cleaned_data, record_id)
         return redirect('statistics:show', journal_id=journal_id)
     return render(request,
                   'statistics/record_form.html',

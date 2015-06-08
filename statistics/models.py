@@ -44,7 +44,7 @@ class Journal(models.Model):
         else:
             return None
 
-    def set_data(journal, data, record_id=None):
+    def set_data(self, data, record_id=None):
         if record_id:
             rec = Record.objects.get(pk=record_id)
             changed_fields = []
@@ -53,7 +53,7 @@ class Journal(models.Model):
                 if rec.__getattribute__(name) != data[name]:
                     changed_fields.append(name)
                     rec.__setattr__(name, data[name])
-            if journal.extended_stat:
+            if self.extended_stat:
                 rec.stateitem_set.all().delete()
                 for state_name in ('rsv', 'arm', 'trm', 'krm', 'srm', 'rcd'):
                     if data[state_name]:
@@ -62,18 +62,19 @@ class Journal(models.Model):
                             time_in_state=data[state_name])
             rec.save(update_fields=changed_fields)
         else:
-            new_record = journal.record_set.create(
+            rec = self.record_set.create(
                 date=data['date'],
                 period_length=data['period_length'],
                 work=data['work'],
                 ostanov_cnt=data['ostanov_cnt'],
                 pusk_cnt=data['pusk_cnt'],)
-            if journal.extended_stat:
+            if self.extended_stat:
                  for state_name in ('rsv', 'arm', 'trm', 'krm', 'srm', 'rcd'):
                     if data[state_name]:
-                        new_record.stateitem_set.create(
+                        rec.stateitem_set.create(
                             state=state_name,
                             time_in_state=data[state_name])
+        return rec
 
 
 DAY = 24
