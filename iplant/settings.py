@@ -37,6 +37,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_nose',
     'catalog',
     'statistics',
 )
@@ -111,3 +112,12 @@ FORMAT_MODULE_PATH = 'iplant.formats'
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
 STATIC_URL = '/static/'
+
+TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
+
+NOSE_ARGS = [
+    '--verbosity=2',
+    # '--with-coverage',
+    # '--cover-package=statisics',
+    # '--cover-inclusive',
+]

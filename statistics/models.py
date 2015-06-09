@@ -4,13 +4,18 @@ from datetime import timedelta
 from catalog.models import Unit
 
 
+STANDARD_STATE_DATA = ('date', 'work', 'period_length',
+                       'ostanov_cnt', 'pusk_cnt')
+EXT_STATE_DATA = ('rsv', 'arm', 'trm', 'krm', 'srm', 'rcd')
+
+
 def default_stat():
     return {"wd": "00:00", "psk": 0, "ost": 0}
 
 
 class Journal(models.Model):
     """
-    Description: Раздел журнала для группировки записей статистики
+    Класс Журнала записей статистики
     по конкретному оборудованию
     """
 
@@ -32,11 +37,10 @@ class Journal(models.Model):
         data = {}
         if record_id:
             rec = Record.objects.get(pk=record_id)
-            for name in ('date', 'work', 'period_length',
-                         'ostanov_cnt', 'pusk_cnt'):
+            for name in STANDARD_STATE_DATA:
                 data[name] = rec.__getattribute__(name)
             if rec.journal.extended_stat:
-                for state in ('rsv', 'arm', 'trm', 'krm', 'srm', 'rcd'):
+                for state in EXT_STATE_DATA:
                     data[state] = timedelta(seconds=0)
                 for state_item in rec.stateitem_set.all():
                     data[state_item.state.lower()] = state_item.time_in_state
@@ -48,14 +52,13 @@ class Journal(models.Model):
         if record_id:
             rec = Record.objects.get(pk=record_id)
             changed_fields = []
-            for name in ('date', 'work', 'period_length',
-                         'ostanov_cnt', 'pusk_cnt'):
+            for name in STANDARD_STATE_DATA:
                 if rec.__getattribute__(name) != data[name]:
                     changed_fields.append(name)
                     rec.__setattr__(name, data[name])
             if self.extended_stat:
                 rec.stateitem_set.all().delete()
-                for state_name in ('rsv', 'arm', 'trm', 'krm', 'srm', 'rcd'):
+                for state_name in EXT_STATE_DATA:
                     if data[state_name]:
                         rec.stateitem_set.create(
                             state=state_name,
@@ -69,7 +72,7 @@ class Journal(models.Model):
                 ostanov_cnt=data['ostanov_cnt'],
                 pusk_cnt=data['pusk_cnt'],)
             if self.extended_stat:
-                 for state_name in ('rsv', 'arm', 'trm', 'krm', 'srm', 'rcd'):
+                for state_name in EXT_STATE_DATA:
                     if data[state_name]:
                         rec.stateitem_set.create(
                             state=state_name,
@@ -89,7 +92,7 @@ PERIOD_IN_CHOICES = (
 
 class Record(models.Model):
     """
-    Description: Одна строка записи журнала на дату начала периода
+    Класс Одна строка стандартной записи журнала на дату начала периода
     """
 
     journal = models.ForeignKey('Journal')
@@ -105,6 +108,11 @@ class Record(models.Model):
             self.date,
             self.period_length,
             self.work)
+
+    def duration_work(self):
+        hours, remainder = divmod(self.work, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        return '%s:%s:%s' % (hours, minutes, seconds)
 
 RESERV = 'RSV'
 TEK_REM = 'TRM'
@@ -124,8 +132,8 @@ STATE_CHOICES = (
 
 class StateItem(models.Model):
     """
-    Description: Ненулевая позиция состояния Оборудования из Журнала.
-    Например: ЗЖ | 24:00 | Работа
+    Класс расширения стандартной записи статистики дополнительным,
+    ненулевым, временем нахождения в состоянии
     """
 
     record = models.ForeignKey('Record')
