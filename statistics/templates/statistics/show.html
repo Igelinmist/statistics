@@ -1,3 +1,4 @@
+{% load statistics_extras %}
 <h1>Журнал статистики {{ journal.equipment.name }}</h1>
 <table>
     <tr>
@@ -10,7 +11,7 @@
     <tr>
         <td>{{ rec.date }}</td>
         <td>{{ rec.period_length }}</td>
-        <td>{{ rec.work }}</td>
+        <td>{{ rec.work|interval }}</td>
         <td>
             <a href="{% url 'statistics:record_edit' journal.id rec.id %}">Править</a>
             |
@@ -19,4 +20,5 @@
     </tr>
     {% endfor %}
 </table>
-<a href="{% url 'statistics:record_new' journal.id %}">Добавить запись</a>
+<a href="{% url 'statistics:record_new' journal.id %}">Добавить запись</a><br />
+<a href="{% url 'statistics:index' %}">к журналам</a>

@@ -1,7 +1,11 @@
 {% if journals %}
     <ul>
     {% for journal in journals %}
-        <li><a href="{% url 'statistics:show' journal.id %}">{{ journal.equipment.name }}</a></li>
+        <li>
+            <a href="{% url 'statistics:show' journal.id %}">{{ journal.equipment.name }}</a>
+            |
+            в работе: "{{ journal.last_stat }}"
+        </li>
     {% endfor %}
     </ul>
 {% else %}

@@ -1,5 +1,6 @@
-from django.db import models
 from datetime import timedelta
+
+from django.db import models
 
 from catalog.models import Unit
 
@@ -13,6 +14,13 @@ def default_stat():
     return {"wd": "00:00", "psk": 0, "ost": 0}
 
 
+def stat_timedelta(time_delta):
+    sec = time_delta.total_seconds()
+    hours, remainder = divmod(sec, 3600)
+    minutes, sec = divmod(remainder, 60)
+    return '%d:%02d' % (int(hours), int(minutes))
+
+
 class Journal(models.Model):
     """
     Класс Журнала записей статистики
@@ -23,7 +31,7 @@ class Journal(models.Model):
     extended_stat = models.BooleanField(default=False)
     stat_by_parent = models.BooleanField(default=False)
     description = models.TextField(blank=True)
-    last_stat = models.CharField(max_length=100,
+    last_stat = models.CharField(max_length=250,
                                  default=default_stat,
                                  editable=False)
 
@@ -47,6 +55,14 @@ class Journal(models.Model):
             return data
         else:
             return None
+
+    def update_state_cash(self):
+        sum_stat = {}
+        sum_stat['wd'] = stat_timedelta(self.record_set.aggregate(models.Sum('work'))['work__sum'])
+        sum_stat['psk'] = self.record_set.aggregate(models.Sum('pusk_cnt'))['pusk_cnt__sum']
+        sum_stat['ost'] = self.record_set.aggregate(models.Sum('ostanov_cnt'))['ostanov_cnt__sum']
+        self.last_stat = str(sum_stat)
+        self.save()
 
     def set_data(self, data, record_id=None):
         if record_id:
@@ -77,8 +93,8 @@ class Journal(models.Model):
                         rec.stateitem_set.create(
                             state=state_name,
                             time_in_state=data[state_name])
+        self.update_state_cash()
         return rec
-
 
 DAY = 24
 YEAR = 8760
@@ -103,16 +119,17 @@ class Record(models.Model):
     pusk_cnt = models.IntegerField(default=0)
     ostanov_cnt = models.IntegerField(default=0)
 
+    def __del__(self):
+        journal = self.journal
+        del self
+        journal.update_state_cash()
+
     def __str__(self):
         return "{0} | {1} | {2}".format(
             self.date,
             self.period_length,
             self.work)
 
-    def duration_work(self):
-        hours, remainder = divmod(self.work, 3600)
-        minutes, seconds = divmod(remainder, 60)
-        return '%s:%s:%s' % (hours, minutes, seconds)
 
 RESERV = 'RSV'
 TEK_REM = 'TRM'
