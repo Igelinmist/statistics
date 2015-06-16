@@ -22,30 +22,6 @@ def create_record(eq_name='Test equipment'):
 
 
 class JournalViewTests(TestCase):
-    def test_index_view_with_no_journals(self):
-        '''
-        Если журналы отсутствуют - показать соответствующее сообщение
-        на странице index
-        '''
-        response = self.client.get(reverse('statistics:index'))
-
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Не найдено ни одного журнала.')
-        self.assertQuerysetEqual(response.context['journals'], [])
-
-    def test_index_view_with_journals(self):
-        '''
-        С двумя журналами показать список объектов Journal
-        на странице index
-        '''
-        create_record('KA-1')
-        create_record('KA-2')
-        response = self.client.get(reverse('statistics:index'))
-
-        self.assertEqual(response.status_code, 200)
-        self.assertQuerysetEqual(
-            response.context['journals'],
-            ['<Journal: KA-1>', '<Journal: KA-2>'])
 
     def test_jornal_show(self):
         '''

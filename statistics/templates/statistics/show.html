@@ -20,5 +20,7 @@
     </tr>
     {% endfor %}
 </table>
-<a href="{% url 'statistics:record_new' journal.id %}">Добавить запись</a><br />
+{% if not journal.stat_by_parent %}
+    <a href="{% url 'statistics:record_new' journal.id %}">Добавить запись</a><br />
+{% endif %}
 <a href="{% url 'statistics:index' %}">к журналам</a>

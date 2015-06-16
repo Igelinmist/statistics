@@ -13,7 +13,7 @@ def index(request):
 
 def show(request, journal_id):
     journal = get_object_or_404(Journal, pk=journal_id)
-    record_list = journal.record_set.order_by('-date')[:10]
+    record_list = journal.get_last_records()
     return render(
         request,
         'statistics/show.html',

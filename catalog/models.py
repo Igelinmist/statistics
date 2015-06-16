@@ -29,7 +29,6 @@ class Unit(models.Model):
                     get_tree(knot_dict, tree_list, ident, branch_object)
                 else:
                     tree_list.append((branch_object, ident))
-            ident -= 1
 
         units = Unit.objects.all()
         tree_list = []

@@ -96,6 +96,12 @@ class Journal(models.Model):
         self.update_state_cash()
         return rec
 
+    def get_last_records(self, depth=10):
+        if self.stat_by_parent:
+            return self.equipment.plant.journal.get_last_records(depth)
+        else:
+            return self.record_set.order_by('-date')[:depth]
+
 DAY = 24
 YEAR = 8760
 LEAP_YEAR = 8784
