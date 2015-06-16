@@ -1,13 +1,12 @@
-{% if journals %}
-    <ul>
-    {% for journal in journals %}
+{% load statistics_extras %}
+<ul>
+    {% for unit in equipment_list %}
         <li>
-            <a href="{% url 'statistics:show' journal.id %}">{{ journal.equipment.name }}</a>
-            |
-            в работе: "{{ journal.last_stat }}"
+        {% if unit.0.journal %}
+            {{ unit.1|make_ident }}{{ unit.0.name }} | <a href="{% url 'statistics:show' unit.0.journal.id %}">журнал</a>
+        {% else %}
+            {{ unit.1|make_ident }}{{ unit.0.name }}
+        {% endif %}
         </li>
     {% endfor %}
-    </ul>
-{% else %}
-    <p>Не найдено ни одного журнала.</p>
-{% endif %}
+</ul>

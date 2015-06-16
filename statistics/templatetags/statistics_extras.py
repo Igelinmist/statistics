@@ -9,3 +9,8 @@ def interval(time_delta):
     hours, remainder = divmod(sec, 3600)
     minutes, sec = divmod(remainder, 60)
     return '%4d:%02d' % (int(hours), int(minutes))
+
+
+@register.filter()
+def make_ident(ident):
+    return '--' * ident

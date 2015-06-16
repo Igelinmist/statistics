@@ -11,7 +11,7 @@ EXT_STATE_DATA = ('rsv', 'arm', 'trm', 'krm', 'srm', 'rcd')
 
 
 def default_stat():
-    return {"wd": "00:00", "psk": 0, "ost": 0}
+    return "wd=00:00,psk=0,ost=0"
 
 
 def stat_timedelta(time_delta):
@@ -57,11 +57,11 @@ class Journal(models.Model):
             return None
 
     def update_state_cash(self):
-        sum_stat = {}
-        sum_stat['wd'] = stat_timedelta(self.record_set.aggregate(models.Sum('work'))['work__sum'])
-        sum_stat['psk'] = self.record_set.aggregate(models.Sum('pusk_cnt'))['pusk_cnt__sum']
-        sum_stat['ost'] = self.record_set.aggregate(models.Sum('ostanov_cnt'))['ostanov_cnt__sum']
-        self.last_stat = str(sum_stat)
+        stat = "wd=%s,psk=%d,ost=%d" % (
+            stat_timedelta(self.record_set.aggregate(models.Sum('work'))['work__sum']),
+            self.record_set.aggregate(models.Sum('pusk_cnt'))['pusk_cnt__sum'],
+            self.record_set.aggregate(models.Sum('ostanov_cnt'))['ostanov_cnt__sum'],)
+        self.last_stat = stat
         self.save()
 
     def set_data(self, data, record_id=None):
