@@ -41,7 +41,7 @@ class Journal(models.Model):
     def __str__(self):
         return self.equipment.name
 
-    def get_data(record_id=None):
+    def get_record_data(record_id=None):
         data = {}
         if record_id:
             rec = Record.objects.get(pk=record_id)
@@ -56,15 +56,34 @@ class Journal(models.Model):
         else:
             return None
 
-    def update_state_cash(self):
-        stat = "wd=%s,psk=%d,ost=%d" % (
-            stat_timedelta(self.record_set.aggregate(models.Sum('work'))['work__sum']),
-            self.record_set.aggregate(models.Sum('pusk_cnt'))['pusk_cnt__sum'],
-            self.record_set.aggregate(models.Sum('ostanov_cnt'))['ostanov_cnt__sum'],)
-        self.last_stat = stat
-        self.save()
+    def get_state_summary(self, date_from=None):
+        if self.record_set.count():
+            recs = self.record_set
+            if date_from:
+                recs = recs.filter(date__gte=date_from)
+            stat = "wd=%s,psk=%d,ost=%d" % (
+                stat_timedelta(recs.aggregate(models.Sum('work'))['work__sum']),
+                recs.aggregate(models.Sum('pusk_cnt'))['pusk_cnt__sum'],
+                recs.aggregate(models.Sum('ostanov_cnt'))['ostanov_cnt__sum'],)
+        else:
+            stat = "wd=00:00,psk=0,ost=0"
+        return stat
 
-    def set_data(self, data, record_id=None):
+    def update_state_cache(self):
+        self.last_stat = self.get_state_summary()
+        self.save()
+        # обновление статистики для зависимых компонентов
+        plant_equipment = self.equipment
+        for unit in plant_equipment.unit_set.all():
+            if unit.journal and unit.journal.stat_by_parent:
+                try:
+                    date_from = unit.journal.eventitem_set.filter(event='ZMN').order_by('-date')[0].date
+                except IndexError:
+                    date_from = None
+                unit.journal.last_stat = self.get_state_summary(date_from)
+                unit.journal.save()
+
+    def set_record_data(self, data, record_id=None):
         if record_id:
             rec = Record.objects.get(pk=record_id)
             changed_fields = []
@@ -93,7 +112,7 @@ class Journal(models.Model):
                         rec.stateitem_set.create(
                             state=state_name,
                             time_in_state=data[state_name])
-        self.update_state_cash()
+        self.update_state_cache()
         return rec
 
     def get_last_records(self, depth=10):
@@ -101,6 +120,11 @@ class Journal(models.Model):
             return self.equipment.plant.journal.get_last_records(depth)
         else:
             return self.record_set.order_by('-date')[:depth]
+
+    def set_event_data(self, data):
+        self.eventitem_set.create(
+            date=data['date'],
+            event=data['event'])
 
 DAY = 24
 YEAR = 8760
@@ -128,7 +152,7 @@ class Record(models.Model):
     def __del__(self):
         journal = self.journal
         del self
-        journal.update_state_cash()
+        journal.update_state_cache()
 
     def __str__(self):
         return "{0} | {1} | {2}".format(
@@ -167,18 +191,21 @@ class StateItem(models.Model):
     time_in_state = models.DurationField()
 
 
+VVOD = 'VVD'
+ZAMENA = 'ZMN'
+SPISANIE = 'SPS'
+EVENT_CHOICES = ((VVOD, 'Ввод'),
+                 (ZAMENA, 'Замена'),
+                 (SPISANIE, 'Списание'))
+EVENT_CHOICES_DICT = dict(EVENT_CHOICES)
+
+
 class EventItem(models.Model):
     """
     Description: Отражение события жизненного цикла
     из предопределенного набора: [Ввод, Списание, Замена]
     Например: ОиЖ | 01.03.2015 | Замена
     """
-    VVOD = 'VVD'
-    ZAMENA = 'ZMN'
-    SPISANIE = 'SPS'
-    EVENT_CHOICES = ((VVOD, 'Ввод'),
-                     (ZAMENA, 'Замена'),
-                     (SPISANIE, 'Списание'))
 
     journal = models.ForeignKey('Journal')
     date = models.DateField()

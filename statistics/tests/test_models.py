@@ -30,26 +30,26 @@ def create_record(eq_name='Test equipment', ext_stat=False):
 
 class JournalModelTest(TestCase):
 
-    def test_get_data_for_new_record(self):
+    def test_get_record_data_for_new_record(self):
         '''
         Проверка подготовки данных для формы новой записи
         Должен возвращать None
 
-        Тестируется метод get_data
+        Тестируется метод get_record_data
         '''
-        form_data = Journal.get_data()
+        form_data = Journal.get_record_data()
 
         self.assertEqual(form_data, None)
 
-    def test_get_data_form_existing_short_record(self):
+    def test_get_record_data_form_existing_short_record(self):
         '''
         Проверка подготовки данных для формы существующей короткой записи
         Должен возвращать данные для полей
 
-        Тестируется метод get_data
+        Тестируется метод get_record_data
         '''
         rec = create_record()
-        form_data = Journal.get_data(rec.id)
+        form_data = Journal.get_record_data(rec.id)
 
         self.assertEqual(
             form_data,
@@ -59,15 +59,15 @@ class JournalModelTest(TestCase):
              'pusk_cnt': 1,
              'ostanov_cnt': 1})
 
-    def test_get_data_form_existing_full_record(self):
+    def test_get_record_data_form_existing_full_record(self):
         '''
         Проверка подготовки данных для формы существующей полной записи
         Должен возвращать данные для полей
 
-        Тестируется метод get_data
+        Тестируется метод get_record_data
         '''
         rec = create_record(ext_stat=True)
-        form_data = Journal.get_data(rec.id)
+        form_data = Journal.get_record_data(rec.id)
         empty_time = datetime.timedelta(hours=0)
         self.assertEqual(
             form_data, {
@@ -84,12 +84,12 @@ class JournalModelTest(TestCase):
                 'work': datetime.timedelta(hours=5),
             })
 
-    def test_set_data_for_new_full_record(self):
+    def test_set_record_data_for_new_full_record(self):
         '''
         Проверка создания новой записи по данным, полученным из формы
         для полной записи статистики
 
-        Тестируется метод set_data
+        Тестируется метод set_record_data
         '''
         empty_time = datetime.timedelta(hours=0)
         form_data = {
@@ -106,16 +106,17 @@ class JournalModelTest(TestCase):
             'rcd': empty_time,
         }
         journal = create_journal(ext_stat=True)
-        rec = journal.set_data(form_data)
+        rec = journal.set_record_data(form_data)
 
         self.assertEqual(journal.record_set.count(), 1)
         self.assertEqual(rec.stateitem_set.count(), 1)
+        self.assertEqual(journal.last_stat, 'wd=5:00,psk=1,ost=1')
 
-    def test_set_data_for_new_short_record(self):
+    def test_set_record_data_for_new_short_record(self):
         '''
         Проверка создания новой записи по данным, полученным из формы
         для короткой записи статистики
-        Тестируется метод set_data
+        Тестируется метод set_record_data
         '''
         form_data = {
             'date': datetime.date.today()-datetime.timedelta(days=1),
@@ -125,7 +126,8 @@ class JournalModelTest(TestCase):
             'work': datetime.timedelta(hours=5),
         }
         journal = create_journal(ext_stat=False)
-        rec = journal.set_data(form_data)
+        rec = journal.set_record_data(form_data)
 
         self.assertEqual(journal.record_set.count(), 1)
         self.assertEqual(rec.stateitem_set.count(), 0)
+        self.assertEqual(journal.last_stat, 'wd=5:00,psk=1,ost=1')

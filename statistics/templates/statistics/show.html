@@ -1,5 +1,8 @@
 {% load statistics_extras %}
 <h1>Журнал статистики {{ journal.equipment.name }}</h1>
+<h3>Накопленная статистика:</h2>
+Наработка: {{ journal|sum_stat:'wd' }}, остановов: {{ journal|sum_stat:'ost' }}, пусков: {{ journal|sum_stat:'psk' }}
+<h3>Записи журнала работы</h3>
 <table>
     <tr>
         <th>Дата</th>
@@ -23,4 +26,24 @@
 {% if not journal.stat_by_parent %}
     <a href="{% url 'statistics:record_new' journal.id %}">Добавить запись</a><br />
 {% endif %}
+<h3>Записи событий</h3>
+<table>
+    <tr>
+        <th>Дата</th>
+        <th>Событие</th>
+        <th>Actions</th>
+    </tr>
+    {% for event in event_list %}
+        <tr>
+            <td>{{ event.date }}</td>
+            <td>{{ event.event|human_event }}</td>
+            <td><a href="{% url 'statistics:event_delete' journal.id event.id %}">Удалить</a></td>
+        </tr>
+    {% endfor %}
+</table>
+<form action="{% url 'statistics:event_new' journal.id %}" method="post">
+    {% csrf_token %}
+    {{ form }}
+<input type="submit" value="Добавить" />
+</form>
 <a href="{% url 'statistics:index' %}">к журналам</a>

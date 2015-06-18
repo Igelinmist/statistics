@@ -1,7 +1,7 @@
 from django import forms
 from datetime import timedelta, date
 
-from .models import PERIOD_IN_CHOICES
+from .models import PERIOD_IN_CHOICES, EVENT_CHOICES
 
 
 class RecordForm(forms.Form):
@@ -59,3 +59,12 @@ class RecordForm(forms.Form):
         if flExt and setting_time != common_time:
             raise forms.ValidationError(
                 'Длительность периода не сходится с суммой времен состояний!')
+
+
+class EventForm(forms.Form):
+    date = forms.DateField(
+        initial=date.today()-timedelta(days=1),
+        label='Дата')
+    event = forms.ChoiceField(
+        choices=EVENT_CHOICES,
+        label='Событие',)

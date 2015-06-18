@@ -1,5 +1,7 @@
 from django import template
 
+from statistics.models import EVENT_CHOICES_DICT
+
 register = template.Library()
 
 
@@ -14,3 +16,15 @@ def interval(time_delta):
 @register.filter()
 def make_ident(ident):
     return '--' * ident
+
+
+@register.filter()
+def sum_stat(journal, key):
+    stat_pair_list = journal.last_stat.split(',')
+    stat_dict = dict([par.split('=') for par in stat_pair_list])
+    return stat_dict[key]
+
+
+@register.filter()
+def human_event(event_code):
+    return EVENT_CHOICES_DICT[event_code]
