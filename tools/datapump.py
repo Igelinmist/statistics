@@ -38,6 +38,17 @@ class Receiver():
             print('%s > %s' % (node, self.plant_dict[node]))
 
 
+class Journal:
+    def __init__(self, old_eq_num, eq_num, ext_stat, stat_by_parent):
+        self.old_eq_num = old_eq_num
+        self.equipment_id = eq_num
+        self.extended_stat = ext_stat
+        self.stat_by_parent = stat_by_parent
+
+    def set_id(self, oid):
+        self.id = oid
+
+
 class Archiver():
     """Store data in new statistics format"""
     def __init__(self, db_host, db_port=5432, db_user='puser', db_pwd='1234'):
@@ -68,18 +79,40 @@ class Archiver():
             if old_node in node_dict:
                 for branch in node_dict[old_node]:
                     nums = self.store_equipment(branch[0], branch[2], new_node)
-                    self.node_list.append(nums)
+                    if branch[6]:
+                        self.journal_list.append(
+                            Journal(nums[0], nums[1], branch[7], branch[8]))
                     job_node(*nums)
 
         self.cur.execute('DELETE FROM catalog_unit;')
         self.conn.commit()
-        self.node_list = []
+        self.journal_list = []
         job_node()
 
+    def create_journals(self):
+        for journal in self.journal_list:
+            self.cur.execute(
+                """INSERT INTO statistics_journal
+                (extended_stat, stat_by_parent, equipment_id,
+                    description, last_stat)
+                VALUES (%s, %s, %s, %s, %s)""",
+                (journal.extended_stat,
+                    journal.stat_by_parent,
+                    journal.equipment_id,
+                    '',
+                    'wd=00:00,psk=0,ost=0'))
+            self.conn.commit()
+            self.cur.execute(
+                'SELECT id from statistics_journal ORDER BY id DESC LIMIT 1;')
+            journal.set_id(self.cur.fetchone()[0])
+            self.conn.commit()
 
 if __name__ == '__main__':
     receiver = Receiver('192.168.20.104')
+    receiver.get_equipment()
+    # receiver.view_nodes()
     archiver = Archiver('127.0.0.1')
     archiver.store_equipment_set(receiver.get_equipment())
+    archiver.create_journals()
     receiver.close()
     archiver.close()
