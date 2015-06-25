@@ -1,5 +1,5 @@
 {% load statistics_extras %}
-<h1>Журнал статистики {{ journal.equipment.name }}</h1>
+<h2>Журнал статистики {{ journal.equipment }}</h2>
 <h3>Накопленная статистика:</h2>
 Наработка: {{ journal|sum_stat:'wd' }}, остановов: {{ journal|sum_stat:'ost' }}, пусков: {{ journal|sum_stat:'psk' }}
 <h3>Записи журнала работы</h3>
@@ -8,18 +8,26 @@
         <th>Дата</th>
         <th>Период</th>
         <th>Работа</th>
-        <th>Actions</th>
+        {% if journal.stat_by_parent %}
+            <th></th>
+        {% else %}
+            <th>Actions</th>
+        {% endif %}
     </tr>
     {% for rec in record_list %}
     <tr>
         <td>{{ rec.date }}</td>
         <td>{{ rec.period_length }}</td>
         <td>{{ rec.work|interval }}</td>
-        <td>
-            <a href="{% url 'statistics:record_edit' journal.id rec.id %}">Править</a>
-            |
-            <a href="{% url 'statistics:record_delete' journal.id rec.id %}">Удалить</a>
-        </td>
+        {% if journal.stat_by_parent %}
+            <td></td>
+        {% else %}
+            <td>
+                <a href="{% url 'statistics:record_edit' journal.id rec.id %}">Править</a>
+                |
+                <a href="{% url 'statistics:record_delete' journal.id rec.id %}">Удалить</a>
+            </td>
+        {% endif %}
     </tr>
     {% endfor %}
 </table>

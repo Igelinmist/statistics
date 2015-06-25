@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404, render, redirect
 
-from .models import Journal, Record, EventItem
+from .models import Journal, EventItem
 from .forms import RecordForm, EventForm
 from catalog.models import Unit
 
@@ -53,9 +53,9 @@ def record_update(request, journal_id, record_id):
 
 def record_delete(request, journal_id, record_id):
     template_name = 'statistics/confirm_record_delete.html'
-    record = get_object_or_404(Record, pk=record_id)
+    journal = get_object_or_404(Journal, pk=journal_id)
     if request.method == 'POST':
-        record.delete()
+        journal.delete_record(record_id)
         return redirect('statistics:show', journal_id=journal_id)
     return render(request, template_name)
 

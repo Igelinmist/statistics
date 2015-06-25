@@ -23,11 +23,11 @@ def stat_timedelta(time_delta):
 
 class Journal(models.Model):
     """
-    Класс Журнала записей статистики
+    Модель Журнала записей статистики
     по конкретному оборудованию
     """
 
-    equipment = models.OneToOneField(Unit)
+    equipment = models.OneToOneField(Unit, on_delete=models.CASCADE)
     extended_stat = models.BooleanField(default=False)
     stat_by_parent = models.BooleanField(default=False)
     description = models.TextField(blank=True)
@@ -42,6 +42,10 @@ class Journal(models.Model):
         return self.equipment.name
 
     def get_record_data(record_id=None):
+        '''
+        Description: Функция получения данных для инициализации полей формы
+        существующей записью, включая расширенные состояния при наличии
+        '''
         data = {}
         if record_id:
             rec = Record.objects.get(pk=record_id)
@@ -57,6 +61,10 @@ class Journal(models.Model):
             return None
 
     def get_state_summary(self, date_from=None):
+        '''
+        Description: Метод подсчета базовой статистики, возможно,
+        от определенной даты
+        '''
         if self.record_set.count():
             recs = self.record_set
             if date_from:
@@ -73,11 +81,11 @@ class Journal(models.Model):
         self.last_stat = self.get_state_summary()
         self.save()
         # обновление статистики для зависимых компонентов
-        plant_equipment = self.equipment
-        for unit in plant_equipment.unit_set.all():
+        for unit in self.equipment.unit_set.all():
             if unit.journal and unit.journal.stat_by_parent:
                 try:
-                    date_from = unit.journal.eventitem_set.filter(event='ZMN').order_by('-date')[0].date
+                    date_from = unit.journal.eventitem_set.filter(
+                        event='ZMN').order_by('-date')[0].date
                 except IndexError:
                     date_from = None
                 unit.journal.last_stat = self.get_state_summary(date_from)
@@ -115,6 +123,11 @@ class Journal(models.Model):
         self.update_state_cache()
         return rec
 
+    def delete_record(self, record_id):
+        rec = self.record_set.get(pk=record_id)
+        rec.delete()
+        self.update_state_cache()
+
     def get_last_records(self, depth=10):
         if self.stat_by_parent:
             return self.equipment.plant.journal.get_last_records(depth)
@@ -138,21 +151,16 @@ PERIOD_IN_CHOICES = (
 
 class Record(models.Model):
     """
-    Класс Одна строка стандартной записи журнала на дату начала периода
+    Модель Одна строка стандартной записи журнала на дату начала периода
     """
 
-    journal = models.ForeignKey('Journal')
+    journal = models.ForeignKey('Journal', on_delete=models.CASCADE)
     date = models.DateField()
     period_length = models.IntegerField(choices=PERIOD_IN_CHOICES,
                                         default=DAY)
     work = models.DurationField(default='00:00')
     pusk_cnt = models.IntegerField(default=0)
     ostanov_cnt = models.IntegerField(default=0)
-
-    def __del__(self):
-        journal = self.journal
-        del self
-        journal.update_state_cache()
 
     def __str__(self):
         return "{0} | {1} | {2}".format(
@@ -179,11 +187,11 @@ STATE_CHOICES = (
 
 class StateItem(models.Model):
     """
-    Класс расширения стандартной записи статистики дополнительным,
+    Модель расширения стандартной записи статистики дополнительным,
     ненулевым, временем нахождения в состоянии
     """
 
-    record = models.ForeignKey('Record')
+    record = models.ForeignKey('Record', on_delete=models.CASCADE)
     state = models.CharField(max_length=3,
                              choices=STATE_CHOICES,
                              default=RESERV,
@@ -202,12 +210,12 @@ EVENT_CHOICES_DICT = dict(EVENT_CHOICES)
 
 class EventItem(models.Model):
     """
-    Description: Отражение события жизненного цикла
+    Модель Отражение события жизненного цикла
     из предопределенного набора: [Ввод, Списание, Замена]
     Например: ОиЖ | 01.03.2015 | Замена
     """
 
-    journal = models.ForeignKey('Journal')
+    journal = models.ForeignKey('Journal', on_delete=models.CASCADE)
     date = models.DateField()
     event = models.CharField(max_length=3,
                              choices=EVENT_CHOICES)
