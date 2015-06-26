@@ -1,4 +1,5 @@
 import psycopg2
+# from datetime import timedelta
 
 
 class Receiver():
@@ -48,6 +49,34 @@ class Journal:
     def set_id(self, oid):
         self.id = oid
 
+    def pump_records(self, source, dest):
+        source.cur.execute(
+            '''SELECT * FROM statistic_items
+            WHERE equipment_id = %s;''', (self.old_eq_num, ))
+        res = source.cur.fetchall()
+        for rec in res:
+            pusk_cnt = int(rec[10]) if rec[10] else 0
+            stop_cnt = int(rec[11]) if rec[11] else 0
+            dest.cur.execute(
+                """INSERT INTO statistics_record (journal_id, date,
+                period_length, work, pusk_cnt, ostanov_cnt)
+                VALUES (%s, %s, %s, %s, %s, %s);""",
+                (self.id, rec[2], 24, rec[3], pusk_cnt, stop_cnt))
+            dest.conn.commit()
+            dest.cur.execute(
+                'SELECT id from statistics_record ORDER BY id DESC LIMIT 1;')
+            rec_id = dest.cur.fetchone()[0]
+            dest.conn.commit()
+            STATES = ('RSV', 'TRM', 'ARM', 'SRM', 'KRM', 'RCD')
+            for (offset, state_time) in enumerate(rec[4:10]):
+                if state_time:
+                    dest.cur.execute(
+                        """INSERT INTO statistics_stateitem (state,
+                        time_in_state, record_id) VALUES (%s, %s, %s);""", (
+                        STATES[offset], state_time, rec_id))
+                    dest.conn.commit()
+        source.conn.commit()
+
 
 class Archiver():
     """Store data in new statistics format"""
@@ -56,6 +85,16 @@ class Archiver():
             db_host, db_port, db_user, db_pwd)
         self.conn = psycopg2.connect(conn_str)
         self.cur = self.conn.cursor()
+
+    def clear_db(self):
+        self.cur.execute('DELETE FROM statistics_stateitem;')
+        self.conn.commit()
+        self.cur.execute('DELETE FROM statistics_record;')
+        self.conn.commit()
+        self.cur.execute('DELETE FROM statistics_journal;')
+        self.conn.commit()
+        self.cur.execute('DELETE FROM catalog_unit;')
+        self.conn.commit()
 
     def close(self):
         self.conn.commit()
@@ -84,8 +123,7 @@ class Archiver():
                             Journal(nums[0], nums[1], branch[7], branch[8]))
                     job_node(*nums)
 
-        self.cur.execute('DELETE FROM catalog_unit;')
-        self.conn.commit()
+        self.clear_db()
         self.journal_list = []
         job_node()
 
@@ -107,6 +145,10 @@ class Archiver():
             journal.set_id(self.cur.fetchone()[0])
             self.conn.commit()
 
+    def copy_stat(self, source):
+        for journal in self.journal_list:
+            journal.pump_records(source, self)
+
 if __name__ == '__main__':
     receiver = Receiver('192.168.20.104')
     receiver.get_equipment()
@@ -114,5 +156,6 @@ if __name__ == '__main__':
     archiver = Archiver('127.0.0.1')
     archiver.store_equipment_set(receiver.get_equipment())
     archiver.create_journals()
+    archiver.copy_stat(receiver)
     receiver.close()
     archiver.close()
