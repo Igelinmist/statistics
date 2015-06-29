@@ -1,12 +1,17 @@
+{% extends "base.html" %}
+
 {% load statistics_extras %}
-<ul>
-    {% for unit in equipment_list %}
-        <li>
-        {% if unit.0.journal %}
-            {{ unit.1|make_ident }}{{ unit.0.name }} | <a href="{% url 'statistics:show' unit.0.journal.id %}">журнал</a>
-        {% else %}
-            {{ unit.1|make_ident }}{{ unit.0.name }}
-        {% endif %}
-        </li>
-    {% endfor %}
-</ul>
+
+{% block content %}
+    <ul>
+        {% for unit in equipment_list %}
+            <li>
+            {% if unit.0.journal %}
+                {{ unit.1|make_ident }}{{ unit.0.name }} | <a href="{% url 'statistics:show' unit.0.journal.id %}">журнал</a>
+            {% else %}
+                {{ unit.1|make_ident }}{{ unit.0.name }}
+            {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock content %}

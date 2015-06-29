@@ -58,7 +58,7 @@ ROOT_URLCONF = 'iplant.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': ['templates', 'static'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -111,7 +111,13 @@ FORMAT_MODULE_PATH = 'iplant.formats'
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
+STATIC_ROOT = ''
+
 STATIC_URL = '/static/'
+
+STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static'),)
+
+TEMPLATE_DIRS = (os.path.join(BASE_DIR, 'templates'),)
 
 TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
