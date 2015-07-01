@@ -40,6 +40,7 @@ INSTALLED_APPS = (
     'django_nose',
     'catalog',
     'statistics',
+    'authentication',
 )
 
 MIDDLEWARE_CLASSES = (

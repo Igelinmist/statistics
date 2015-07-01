@@ -3,15 +3,17 @@
 {% load statistics_extras %}
 
 {% block content %}
-    <ul>
+    <table class="table table-condensed table-hover">
         {% for unit in equipment_list %}
-            <li>
+            <tr>
             {% if unit.0.journal %}
-                {{ unit.1|make_ident }}{{ unit.0.name }} | <a href="{% url 'statistics:show' unit.0.journal.id %}">журнал</a>
+                <td>{{ unit.1|make_ident }}<strong>{{ unit.0.name }}</strong>(наработка: {{ unit.0.journal|sum_stat:'wd' }}, остановов: {{ unit.0.journal|sum_stat:'ost' }}, пусков: {{ unit.0.journal|sum_stat:'psk' }})</td>
+                <td><a href="{% url 'statistics:show' unit.0.journal.id %}" class="btn btn-primary" role="button">журнал</a></td>
             {% else %}
-                {{ unit.1|make_ident }}{{ unit.0.name }}
+                <td>{{ unit.1|make_ident }}{{ unit.0.name }}</td>
+                <td></td>
             {% endif %}
-            </li>
+            </tr>
         {% endfor %}
-    </ul>
+    </table>
 {% endblock content %}

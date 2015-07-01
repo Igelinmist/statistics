@@ -1,57 +1,59 @@
+{% extends "base.html" %}
 {% load statistics_extras %}
-<h2>Журнал статистики {{ journal.equipment }}</h2>
-<h3>Накопленная статистика:</h2>
-Наработка: {{ journal|sum_stat:'wd' }}, остановов: {{ journal|sum_stat:'ost' }}, пусков: {{ journal|sum_stat:'psk' }}
-<h3>Записи журнала работы</h3>
-<table>
-    <tr>
-        <th>Дата</th>
-        <th>Период</th>
-        <th>Работа</th>
-        {% if journal.stat_by_parent %}
-            <th></th>
-        {% else %}
-            <th>Actions</th>
-        {% endif %}
-    </tr>
-    {% for rec in record_list %}
-    <tr>
-        <td>{{ rec.date }}</td>
-        <td>{{ rec.period_length }}</td>
-        <td>{{ rec.work|interval }}</td>
-        {% if journal.stat_by_parent %}
-            <td></td>
-        {% else %}
-            <td>
-                <a href="{% url 'statistics:record_edit' journal.id rec.id %}">Править</a>
-                |
-                <a href="{% url 'statistics:record_delete' journal.id rec.id %}">Удалить</a>
-            </td>
-        {% endif %}
-    </tr>
-    {% endfor %}
-</table>
-{% if not journal.stat_by_parent %}
-    <a href="{% url 'statistics:record_new' journal.id %}">Добавить запись</a><br />
-{% endif %}
-<h3>Записи событий</h3>
-<table>
-    <tr>
-        <th>Дата</th>
-        <th>Событие</th>
-        <th>Actions</th>
-    </tr>
-    {% for event in event_list %}
+{% block content %}
+    <h2>Журнал статистики</h2>
+    <strong>Оборудование: </strong>
+    <h3>{{ journal.equipment }}</h3>
+    <strong>Накопленная статистика:</strong>
+    Наработка: {{ journal|sum_stat:'wd' }}, остановов: {{ journal|sum_stat:'ost' }}, пусков: {{ journal|sum_stat:'psk' }}
+    <h3>Записи журнала работы</h3>
+    <table class="table table-condensed">
         <tr>
-            <td>{{ event.date }}</td>
-            <td>{{ event.event|human_event }}</td>
-            <td><a href="{% url 'statistics:event_delete' journal.id event.id %}">Удалить</a></td>
+            <th>Дата</th>
+            <th>Работа</th>
+            {% if journal.stat_by_parent %}
+                <th></th>
+            {% else %}
+                <th></th>
+            {% endif %}
         </tr>
-    {% endfor %}
-</table>
-<form action="{% url 'statistics:event_new' journal.id %}" method="post">
-    {% csrf_token %}
-    {{ form }}
-<input type="submit" value="Добавить" />
-</form>
-<a href="{% url 'statistics:index' %}">к журналам</a>
+        {% for rec in record_list %}
+        <tr>
+            <td>{{ rec.date }}</td>
+            <td>{{ rec.work|interval }}</td>
+            {% if journal.stat_by_parent %}
+                <td></td>
+            {% else %}
+                <td>
+                    <a href="{% url 'statistics:record_edit' journal.id rec.id %}" class="btn btn-primary">Править</a>
+                    <a href="{% url 'statistics:record_delete' journal.id rec.id %}" class="btn btn-danger">Удалить</a>
+                </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </table>
+    {% if not journal.stat_by_parent %}
+        <a href="{% url 'statistics:record_new' journal.id %}" class="btn btn-success">Добавить запись</a><br />
+    {% endif %}
+    <h3>Записи событий</h3>
+    <table class="table table-condensed">
+        <tr>
+            <th>Дата</th>
+            <th>Событие</th>
+            <th></th>
+        </tr>
+        {% for event in event_list %}
+            <tr>
+                <td>{{ event.date }}</td>
+                <td>{{ event.event|human_event }}</td>
+                <td><a href="{% url 'statistics:event_delete' journal.id event.id %}" class="btn btn-danger">Удалить</a></td>
+            </tr>
+        {% endfor %}
+    </table>
+    <form action="{% url 'statistics:event_new' journal.id %}" method="post">
+        {% csrf_token %}
+        {{ form }}
+    <input type="submit" value="Добавить" class="btn btn-success"/>
+    </form>
+    <a href="{% url 'statistics:index' %}" class="btn btn-primary">к журналам</a>
+{% endblock content %}

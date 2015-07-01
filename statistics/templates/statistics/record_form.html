@@ -1,16 +1,19 @@
-{% if record_id %}
-    <h1>Правка записи журнала статистики работы для {{ journal.equipment.name }}</h1>
-    <form action="{% url 'statistics:record_edit' journal.id record_id%}" method="post">
-{% else %}
-    <h1>Запись журнала статистики работы для {{ journal.equipment.name }}</h1>
-    <form action="{% url 'statistics:record_new' journal.id%}" method="post">
-{% endif %}
-    {% csrf_token %}
-    <table>
-        {{ form }}
-        <tr>
-            <th>&nbsp;</th>
-            <td><input type="submit" value="Применить" /></td>
-        </tr>
-    </table>
-</form>
+{% extends "base.html" %}
+{% block content %}
+    {% if record_id %}
+        <h2>Правка записи журнала статистики работы для {{ journal.equipment.name }}</h2>
+        <form action="{% url 'statistics:record_edit' journal.id record_id%}" method="post">
+    {% else %}
+        <h2>Запись журнала статистики работы для {{ journal.equipment.name }}</h2>
+        <form action="{% url 'statistics:record_new' journal.id%}" method="post">
+    {% endif %}
+        {% csrf_token %}
+        <table>
+            {{ form }}
+            <tr>
+                <th>&nbsp;</th>
+                <td><input type="submit" value="Применить" /></td>
+            </tr>
+        </table>
+    </form>
+{% endblock content %}
