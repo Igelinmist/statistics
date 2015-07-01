@@ -1,16 +1,13 @@
 from django import forms
 from datetime import timedelta, date
 
-from .models import PERIOD_IN_CHOICES, EVENT_CHOICES
+from .models import EVENT_CHOICES
 
 
 class RecordForm(forms.Form):
     date = forms.DateField(
         initial=date.today()-timedelta(days=1),
         label='Дата')
-    period_length = forms.ChoiceField(
-        choices=PERIOD_IN_CHOICES,
-        label='Период')
     work = forms.DurationField(
         label='Работа')
     rsv = forms.DurationField(
@@ -46,19 +43,6 @@ class RecordForm(forms.Form):
         if not journal.extended_stat:
             for state_name in ('rsv', 'arm', 'trm', 'krm', 'srm', 'rcd'):
                 self.fields[state_name].widget = forms.HiddenInput()
-
-    def clean(self):
-        cleaned_data = super(RecordForm, self).clean()
-        setting_time = timedelta(hours=int(cleaned_data.get('period_length')))
-        common_time = timedelta(hours=0)
-        flExt = False
-        for name in ('work', 'rsv', 'trm', 'arm', 'krm', 'srm', 'rcd'):
-            flExt += bool(cleaned_data.get(name))
-            if cleaned_data.get(name):
-                common_time += cleaned_data.get(name)
-        if flExt and setting_time != common_time:
-            raise forms.ValidationError(
-                'Длительность периода не сходится с суммой времен состояний!')
 
 
 class EventForm(forms.Form):

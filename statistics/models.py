@@ -5,7 +5,7 @@ from django.db import models
 from catalog.models import Unit
 
 
-STANDARD_STATE_DATA = ('date', 'work', 'period_length',
+STANDARD_STATE_DATA = ('date', 'work',
                        'ostanov_cnt', 'pusk_cnt')
 EXT_STATE_DATA = ('rsv', 'arm', 'trm', 'krm', 'srm', 'rcd')
 
@@ -110,7 +110,6 @@ class Journal(models.Model):
         else:
             rec = self.record_set.create(
                 date=data['date'],
-                period_length=data['period_length'],
                 work=data['work'],
                 ostanov_cnt=data['ostanov_cnt'],
                 pusk_cnt=data['pusk_cnt'],)
@@ -156,16 +155,13 @@ class Record(models.Model):
 
     journal = models.ForeignKey('Journal', on_delete=models.CASCADE)
     date = models.DateField()
-    period_length = models.IntegerField(choices=PERIOD_IN_CHOICES,
-                                        default=DAY)
     work = models.DurationField(default='00:00')
     pusk_cnt = models.IntegerField(default=0)
     ostanov_cnt = models.IntegerField(default=0)
 
     def __str__(self):
-        return "{0} | {1} | {2}".format(
+        return "{0} work time: {1}".format(
             self.date,
-            self.period_length,
             self.work)
 
 
