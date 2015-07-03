@@ -1,9 +1,9 @@
 from django.shortcuts import render
 
 
-def profile_show(request):
-    return render(request, 'accounts/home.html')
+def account_show(request):
+    return render(request, 'accounts:account_show')
 
 
-def profile_edit(request):
-    return render(request, 'accounts/home.html')
+def account_edit(request):
+    return render(request, 'accounts:account_edit')
