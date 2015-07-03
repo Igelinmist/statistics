@@ -59,9 +59,9 @@ class Journal:
             stop_cnt = int(rec[11]) if rec[11] else 0
             dest.cur.execute(
                 """INSERT INTO statistics_record (journal_id, date,
-                period_length, work, pusk_cnt, ostanov_cnt)
+                work, pusk_cnt, ostanov_cnt)
                 VALUES (%s, %s, %s, %s, %s, %s);""",
-                (self.id, rec[2], 24, rec[3], pusk_cnt, stop_cnt))
+                (self.id, rec[2], rec[3], pusk_cnt, stop_cnt))
             dest.conn.commit()
             dest.cur.execute(
                 'SELECT id from statistics_record ORDER BY id DESC LIMIT 1;')

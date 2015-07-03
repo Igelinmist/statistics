@@ -2,7 +2,8 @@ from django.db import models
 
 
 class Unit(models.Model):
-    plant = models.ForeignKey('self', blank=True, null=True, on_delete=models.CASCADE)
+    plant = models.ForeignKey('self', blank=True,
+                              null=True, on_delete=models.CASCADE)
     name = models.CharField(max_length=50)
 
     def tree_list(root_unit=None):
@@ -45,4 +46,5 @@ class Unit(models.Model):
 
     class Meta:
         ordering = ['plant_id', 'name']
-        verbose_name_plural = "units"
+        verbose_name = 'оборудование'
+        verbose_name_plural = 'оборудование'

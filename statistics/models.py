@@ -37,9 +37,22 @@ class Journal(models.Model):
 
     class Meta:
         ordering = ['equipment__name']
+        permissions = (
+            ('view_journal_details', 'Может просматривать записи журнала'),
+            ('view_journal_list', 'Может посмотреть список журналов'),
+            ('create_journal_record', 'Может создать запись в журнале'),
+            ('edit_journal_record', 'Может редактировать запись в журнале'),
+            ('delete_journal_record', 'Может удалить запись в журнале'),
+            ('create_journal_event', 'Может создать событие в журнале'),
+            ('delete_journal_evtent', 'Может удалить событие в журнале'),
+        )
+        default_permissions = []
+        verbose_name = 'журнал'
+        verbose_name_plural = 'журналы'
 
     def __str__(self):
-        return self.equipment.name
+        plant_name = self.equipment.plant.name if self.equipment.plant else '-'
+        return plant_name + ' \ ' + self.equipment.name
 
     def get_record_data(record_id=None):
         '''
@@ -138,15 +151,6 @@ class Journal(models.Model):
             date=data['date'],
             event=data['event'])
 
-DAY = 24
-YEAR = 8760
-LEAP_YEAR = 8784
-PERIOD_IN_CHOICES = (
-    (DAY, 'Сутки'),
-    (YEAR, 'Год'),
-    (LEAP_YEAR, 'Вис. год'),
-)
-
 
 class Record(models.Model):
     """
@@ -164,6 +168,8 @@ class Record(models.Model):
             self.date,
             self.work)
 
+    class Meta:
+        default_permissions = []
 
 RESERV = 'RSV'
 TEK_REM = 'TRM'
@@ -193,6 +199,9 @@ class StateItem(models.Model):
                              default=RESERV,
                              db_index=True)
     time_in_state = models.DurationField()
+
+    class Meta:
+        default_permissions = []
 
 
 VVOD = 'VVD'

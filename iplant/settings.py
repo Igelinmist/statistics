@@ -40,7 +40,7 @@ INSTALLED_APPS = (
     'django_nose',
     'catalog',
     'statistics',
-    'authentication',
+    'accounts',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -119,6 +119,10 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static'),)
 
 TEMPLATE_DIRS = (os.path.join(BASE_DIR, 'templates'),)
+
+LOGIN_URL = '/accounts/login/'
+
+LOGOUT_URL = '/accounts/logout/'
 
 TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
