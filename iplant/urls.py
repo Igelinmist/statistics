@@ -10,6 +10,6 @@ urlpatterns = [
 urlpatterns += patterns(
     'django.contrib.auth.views',
 
-    url(r'^login/$', 'login', name='iplant_login'),
+    url(r'^login/$', 'login', {'template_name': 'accounts/login.html'}, name='iplant_login'),
     url(r'^logout/$', 'logout', name='iplant_logout'),
 )

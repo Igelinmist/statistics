@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404, render, redirect
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 from .models import Journal, EventItem
 from .forms import RecordForm, EventForm
@@ -26,6 +27,25 @@ def show(request, journal_id):
         request,
         'statistics/show.html',
         context)
+
+
+def records(request, journal_id):
+    journal = get_object_or_404(Journal, pk=journal_id)
+    record_list = journal.record_set.order_by('-date').all()
+    paginator = Paginator(record_list, 25)
+
+    page = request.GET.get('page')
+    try:
+        records = paginator.page(page)
+    except PageNotAnInteger:
+        records = paginator.page(1)
+    except EmptyPage:
+        records = paginator.page(paginator.num_pages)
+
+    return render(
+        request,
+        'statistics/records.html',
+        {'records': records, 'journal': journal})
 
 
 def record_create(request, journal_id):

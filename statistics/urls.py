@@ -5,6 +5,7 @@ from . import views
 urlpatterns = [
     url(r'^$', views.index, name='index'),
     url(r'^(?P<journal_id>[0-9]+)/$', views.show, name='show'),
+    url(r'^(?P<journal_id>[0-9]+)/records$', views.records, name='records'),
     url(r'^(?P<journal_id>\d+)/record_new$',
         views.record_create,
         name='record_new'),
