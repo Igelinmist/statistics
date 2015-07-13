@@ -31,37 +31,92 @@
             {% endif %}
         </ul>
     </nav>
-
+    {% if not journal.stat_by_parent and user.is_authenticated%}
+        <a href="{% url 'statistics:record_new' journal.id %}" class="btn btn-primary">Добавить запись</a><br />
+    {% endif %}
     <table class="table table-condensed">
-        <tr>
-            <th>Дата</th>
-            <th>Работа</th>
-            {% if journal.stat_by_parent %}
+        {% if journal.extended_stat %}
+            <tr>
+                <th rowspan="2" class="text-center">Дата</th>
+                <th rowspan="2" class="text-center">Работа</th>
+                <th rowspan="2" class="text-center">Резерв</th>
+                <th colspan="4" class="text-center">Ремонт</th>
+                <th rowspan="2" class="text-center">Реконструкция</th>
+                <th rowspan="2"></th>
+            </tr>
+            <tr>
+                <th class="text-center">Текущий</th>
+                <th class="text-center">Аварийный</th>
+                <th class="text-center">Капитальный</th>
+                <th class="text-center">Средний</th>
+            </tr>
+        {% else %}
+            <tr>
+                <th class="text-center">Дата</th>
+                <th class="text-center">Работа</th>
                 <th></th>
-            {% else %}
-                <th></th>
-            {% endif %}
-        </tr>
+            </tr>
+        {% endif %}
         {% for rec in records %}
         <tr>
-            <td>{{ rec.date }}</td>
-            <td>{{ rec.work|interval }}</td>
+            <td class="text-center">{{ rec.date }}</td>
+            <td class="text-center">{{ rec.work|interval }}</td>
+            {% if journal.extended_stat %}
+                <td class="text-center">{{ rec.reserv|interval }}</td>
+                <td class="text-center">{{ rec.tek_rem|interval }}</td>
+                <td class="text-center">{{ rec.av_rem|interval }}</td>
+                <td class="text-center">{{ rec.kap_rem|interval }}</td>
+                <td class="text-center">{{ rec.sr_rem|interval }}</td>
+                <td class="text-center">{{ rec.reconstr|interval }}</td>
+            {% endif %}
             {% if journal.stat_by_parent %}
                 <td></td>
             {% else %}
                 {% if user.is_authenticated %}
                     <td>
-                        <a href="{% url 'statistics:record_edit' journal.id rec.id %}" class="btn btn-primary">Править</a>
-                        <a href="{% url 'statistics:record_delete' journal.id rec.id %}" class="btn btn-danger">Удалить</a>
+                        <a href="{% url 'statistics:record_edit' journal.id rec.id %}" class="btn btn-primary">
+                            <span class="glyphicon glyphicon-edit"></span>
+                        </a>
+                        <a href="{% url 'statistics:record_delete' journal.id rec.id %}" class="btn btn-danger">
+                            <span class="glyphicon glyphicon-minus-sign"></span>
+                        </a>
                     </td>
                 {% endif %}
             {% endif %}
         </tr>
         {% endfor %}
     </table>
+    <nav>
+        <ul class="pagination">
+            {% if records.has_previous %}
+                <li>
+                    <a href="?page={{ records.previous_page_number }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            {% endif %}
+                <li>
+                    <span class="current">
+                        страница {{ records.number }} из {{ records.paginator.num_pages }}
+                    </span>
+                </li>
+            {% if records.has_next %}
+                <li>
+                    <a href="?page={{ records.next_page_number }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
     {% if not journal.stat_by_parent and user.is_authenticated%}
-        <a href="{% url 'statistics:record_new' journal.id %}" class="btn btn-success">Добавить запись</a><br />
+        <a href="{% url 'statistics:record_new' journal.id %}" class="btn btn-primary">Добавить запись</a><br />
     {% endif %}
+    <br \>
+    <p>
+        <a href="{% url 'statistics:index' %}" class="btn btn-default active" role="button">К журналам</a>
+        <a href="{% url 'statistics:show' journal.id %}" class="btn btn-default active" role="button">Последние записи</a>
+    </p>
 
 
 {% endblock content %}

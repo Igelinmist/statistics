@@ -6,6 +6,6 @@ from catalog.models import Unit
 
 class Employee(models.Model):
     """custom profile for User - Employee"""
-    user = models.OneToOneField(User)
+    user = models.OneToOneField(User, related_name='profile')
     department = models.CharField(max_length=100)
     responsible_for_equipment = models.ForeignKey(Unit, blank=True, null=True)

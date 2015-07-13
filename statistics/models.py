@@ -1,5 +1,5 @@
 from datetime import timedelta
-
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 
 from catalog.models import Unit
@@ -167,6 +167,31 @@ class Record(models.Model):
         return "{0} work time: {1}".format(
             self.date,
             self.work)
+
+    def ext_state(self, state_abr):
+        try:
+            res = self.stateitem_set.get(state=state_abr).time_in_state
+        except ObjectDoesNotExist:
+            res = timedelta(seconds=0)
+        return res
+
+    def reserv(self):
+        return self.ext_state('RSV')
+
+    def tek_rem(self):
+        return self.ext_state('TRM')
+
+    def av_rem(self):
+        return self.ext_state('ARM')
+
+    def kap_rem(self):
+        return self.ext_state('KRM')
+
+    def sr_rem(self):
+        return self.ext_state('SRM')
+
+    def reconstr(self):
+        return self.ext_state('RCD')
 
     class Meta:
         default_permissions = []

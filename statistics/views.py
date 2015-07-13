@@ -1,3 +1,4 @@
+
 from django.shortcuts import get_object_or_404, render, redirect
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
@@ -7,7 +8,13 @@ from catalog.models import Unit
 
 
 def index(request):
-    root = Unit.objects.get(name='ТЭЦ-3')
+    root = None
+    if request.user.is_authenticated():
+        try:
+            root = Unit.objects.get(name=request.user.profile.responsible_for_equipment.name)
+        except AttributeError:
+            pass
+
     unit_list = Unit.tree_list(root)
     context = {'equipment_list': unit_list}
     return render(request, 'statistics/index.html', context)
@@ -41,7 +48,6 @@ def records(request, journal_id):
         records = paginator.page(1)
     except EmptyPage:
         records = paginator.page(paginator.num_pages)
-
     return render(
         request,
         'statistics/records.html',
