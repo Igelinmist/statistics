@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta,datetime, date
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 
@@ -104,7 +104,7 @@ class Journal(models.Model):
                 unit.journal.last_stat = self.get_state_summary(date_from)
                 unit.journal.save()
 
-    def set_record_data(self, data, record_id=None):
+    def set_record_data(self, data, record_id=None, process_ext_states=True):
         if record_id:
             rec = Record.objects.get(pk=record_id)
             changed_fields = []
@@ -112,7 +112,7 @@ class Journal(models.Model):
                 if rec.__getattribute__(name) != data[name]:
                     changed_fields.append(name)
                     rec.__setattr__(name, data[name])
-            if self.extended_stat:
+            if self.extended_stat and process_ext_states:
                 rec.stateitem_set.all().delete()
                 for state_name in EXT_STATE_DATA:
                     if data[state_name]:
@@ -126,7 +126,7 @@ class Journal(models.Model):
                 work=data['work'],
                 ostanov_cnt=data['ostanov_cnt'],
                 pusk_cnt=data['pusk_cnt'],)
-            if self.extended_stat:
+            if self.extended_stat and process_ext_states:
                 for state_name in EXT_STATE_DATA:
                     if data[state_name]:
                         rec.stateitem_set.create(
@@ -193,6 +193,27 @@ class Record(models.Model):
     def reconstr(self):
         return self.ext_state('RCD')
 
+    def get_records_on_date(request_date):
+        if request_date:
+            try:
+                slice_date = datetime.strptime(
+                    request_date,
+                    "%d.%m.%Y")
+            except ValueError:
+                slice_date = (date.today() - timedelta(days=1))
+        else:
+            slice_date = (date.today() - timedelta(days=1))
+        query_date = slice_date.strftime("%Y-%m-%d")
+
+        records = Record.objects.filter(date=query_date).values(
+            'journal_id',
+            'work',
+            'id',
+        )
+        res_dict = {rec['journal_id']: (rec['work'], rec['id']) for rec in records}
+        res_dict['date'] = slice_date
+        return res_dict
+
     class Meta:
         default_permissions = []
 
@@ -232,9 +253,11 @@ class StateItem(models.Model):
 VVOD = 'VVD'
 ZAMENA = 'ZMN'
 SPISANIE = 'SPS'
-EVENT_CHOICES = ((VVOD, 'Ввод'),
-                 (ZAMENA, 'Замена'),
-                 (SPISANIE, 'Списание'))
+EVENT_CHOICES = (
+    (ZAMENA, 'Замена'),
+    (VVOD, 'Ввод'),
+    (SPISANIE, 'Списание'),
+)
 EVENT_CHOICES_DICT = dict(EVENT_CHOICES)
 
 

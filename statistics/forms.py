@@ -51,4 +51,5 @@ class EventForm(forms.Form):
         label='Дата')
     event = forms.ChoiceField(
         choices=EVENT_CHOICES,
-        label='Событие',)
+        label='Событие',
+    )

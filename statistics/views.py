@@ -1,8 +1,13 @@
 
 from django.shortcuts import get_object_or_404, render, redirect
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from datetime import datetime
 
-from .models import Journal, EventItem
+
+from django.http import JsonResponse
+
+
+from .models import Journal, EventItem, Record
 from .forms import RecordForm, EventForm
 from catalog.models import Unit
 
@@ -11,13 +16,27 @@ def index(request):
     root = None
     if request.user.is_authenticated():
         try:
-            root = Unit.objects.get(name=request.user.profile.responsible_for_equipment.name)
+            root = Unit.objects.get(name=request.user.profile.
+                                    responsible_for_equipment.name)
         except AttributeError:
             pass
-
     unit_list = Unit.tree_list(root)
     context = {'equipment_list': unit_list}
     return render(request, 'statistics/index.html', context)
+
+
+def journals_on_date(request):
+    root = None
+    if request.user.is_authenticated():
+        try:
+            root = Unit.objects.get(name=request.user.profile.
+                                    responsible_for_equipment.name)
+        except AttributeError:
+            pass
+    unit_list = Unit.tree_list(root)
+    records_dict = Record.get_records_on_date(request.GET.get('date', None))
+    context = {'equipment_list': unit_list, 'records_dict': records_dict}
+    return render(request, 'statistics/journals_on_date.html', context)
 
 
 def show(request, journal_id):
@@ -63,6 +82,24 @@ def record_create(request, journal_id):
     return render(request,
                   'statistics/record_form.html',
                   {'form': form, 'journal': journal, 'record_id': None})
+
+
+def simple_record_create(request, journal_id):
+    if request.is_ajax():
+        journal = get_object_or_404(Journal, pk=journal_id)
+        record_fields = ('date', 'work', 'pusk_cnt', 'ostanov_cnt')
+        data = {key: request.POST[key] for key in record_fields}
+        data['date'] = datetime.strptime(request.POST['date'], '%d.%m.%Y')
+        rec = journal.set_record_data(
+            data,
+            record_id=request.POST.get('record_id', None),
+            process_ext_states=False)
+        response = {'journal_id': journal.id,
+                    'work': rec.work,
+                    }
+    else:
+        response = "not AJAX!"
+    return JsonResponse(response)
 
 
 def record_update(request, journal_id, record_id):

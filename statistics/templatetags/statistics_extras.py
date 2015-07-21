@@ -15,7 +15,7 @@ def interval(time_delta):
 
 @register.filter()
 def make_ident(ident):
-    return '--' * ident
+    return '--' * ident + ' '
 
 
 @register.filter()
@@ -28,3 +28,8 @@ def sum_stat(journal, key):
 @register.filter()
 def human_event(event_code):
     return EVENT_CHOICES_DICT[event_code]
+
+
+@register.filter()
+def key(d, key_name):
+    return d[key_name]

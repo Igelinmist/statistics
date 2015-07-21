@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% load staticfiles%}
+
 {% load statistics_extras %}
 
 {% block content %}
@@ -16,4 +18,10 @@
             </tr>
         {% endfor %}
     </table>
+    <div id="jqtest"></div>
 {% endblock content %}
+
+
+{% block ext_js %}
+    <script src="{% static 'statistics/test.js' %}"></script>
+{% endblock ext_js %}

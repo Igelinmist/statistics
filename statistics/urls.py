@@ -4,8 +4,12 @@ from . import views
 
 urlpatterns = [
     url(r'^$', views.index, name='index'),
+    url(r'^journals_on_date$', views.journals_on_date, name='journals_on_date'),
     url(r'^(?P<journal_id>[0-9]+)/$', views.show, name='show'),
     url(r'^(?P<journal_id>[0-9]+)/records$', views.records, name='records'),
+    url(r'^(?P<journal_id>\d+)/simple_record_new$',
+        views.simple_record_create,
+        name='simple_record_new'),
     url(r'^(?P<journal_id>\d+)/record_new$',
         views.record_create,
         name='record_new'),
