@@ -8,7 +8,7 @@ from django.http import JsonResponse
 
 
 from .models import Journal, EventItem, Record
-from .forms import RecordForm, EventForm
+from .forms import RecordForm, EventForm, ChooseDateForm
 from catalog.models import Unit
 
 
@@ -34,8 +34,12 @@ def journals_on_date(request):
         except AttributeError:
             pass
     unit_list = Unit.tree_list(root)
-    records_dict = Record.get_records_on_date(request.GET.get('date', None))
-    context = {'equipment_list': unit_list, 'records_dict': records_dict}
+    records_dict = Record.get_records_on_date(request.POST.get('date', None))
+    form_date = ChooseDateForm()
+    context = {
+        'equipment_list': unit_list,
+        'records_dict': records_dict,
+        'form_date': form_date}
     return render(request, 'statistics/journals_on_date.html', context)
 
 

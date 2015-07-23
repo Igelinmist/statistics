@@ -4,13 +4,29 @@
 
 {% load statistics_extras %}
 
+{% block head_ext %}
+        {{ form_date.media }}
+{% endblock head_ext %}
+
 {% block content %}
+
     <h2>Ввод статистики по оборудованию</h2>
+
+
+        <form action="" method="POST" class="form-inline">
+            {% csrf_token %}
+            <label for="date">На дату:</label>
+            {{ form_date.date }}
+            <input type="submit" value="Принять" class="btn btn-primary" />
+        </form>
+
+<!--
     <form action="" method="GET">
         <label for="date_inp">Отобразить на дату:</label>
         <input type="date" id="date_inp" name="date" />
         <input type="submit" value="Принять" />
     </form>
+-->
 
     <table class="table table-condensed table-hover">
         {% for unit in equipment_list %}
@@ -60,7 +76,7 @@
     <div id="response-place"></div>
 {% endblock content %}
 
-{% block ext_js %}
+{% block javascript %}
     <script type="text/javascript">
         $(document).ready(function() {
             $('.simple-record-form').submit(function() {
@@ -76,4 +92,4 @@
             });
         });
     </script>
-{% endblock ext_js %}
+{% endblock javascript %}
