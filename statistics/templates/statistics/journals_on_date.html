@@ -8,7 +8,7 @@
     <h2>Ввод статистики по оборудованию</h2>
     <form action="" method="GET">
         <label for="date_inp">Отобразить на дату:</label>
-        <input type="text" id="date_inp" name="date" />
+        <input type="date" id="date_inp" name="date" />
         <input type="submit" value="Принять" />
     </form>
 
@@ -24,7 +24,7 @@
                     <td>
                         {% csrf_token %}
                         <input type="hidden" name="journal_id" value="{{ unit.0.journal.id }}" />
-                        <input type="text" name="date" class="records_date orm-control input-normal" value="{{ records_dict.date|date:'d.m.Y' }}" readonly size="10" />
+                        <input type="date" name="date" class="records_date" value="{{ records_dict.date|date:'d.m.Y' }}" readonly size="10" />
                     </td>
                     <td id="work-interval-{{unit.0.journal.id}}">
                         {% if unit.0.journal.id in records_dict %}
@@ -69,7 +69,7 @@
                     type: $(this).attr('method'),
                     url: $(this).attr('action'),
                     success: function(data) {
-                        $("#work-interval-"+data.journal_id.toString()).html(data.work)
+                        $("#work-interval-"+data.journal_id).html(data.work)
                     }
                 });
                 return false;

@@ -1,6 +1,8 @@
 from django import forms
 from datetime import timedelta, date
 
+from bootstrap3_datetime.widgets import DateTimePicker
+
 from .models import EVENT_CHOICES
 
 
@@ -53,3 +55,13 @@ class EventForm(forms.Form):
         choices=EVENT_CHOICES,
         label='Событие',
     )
+
+
+class ChooseDateForm(forms.Form):
+    date = forms.DateField(
+        widget=DateTimePicker(options={"format": "DD.MM.YYYY",
+                                       "pickTime": False}))
+    reminder = forms.DateTimeField(
+        required=False,
+        widget=DateTimePicker(options={"format": "DD.MM.YYYY",
+                                       "pickSeconds": False}))

@@ -60,7 +60,7 @@ class Journal:
             dest.cur.execute(
                 """INSERT INTO statistics_record (journal_id, date,
                 work, pusk_cnt, ostanov_cnt)
-                VALUES (%s, %s, %s, %s, %s, %s);""",
+                VALUES (%s, %s, %s, %s, %s);""",
                 (self.id, rec[2], rec[3], pusk_cnt, stop_cnt))
             dest.conn.commit()
             dest.cur.execute(
