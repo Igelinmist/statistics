@@ -5,87 +5,109 @@
 {% load statistics_extras %}
 
 {% block head_ext %}
-        {{ form_date.media }}
+{{ form_date.media }}
 {% endblock head_ext %}
 
 {% block content %}
+<h2>Ввод статистики по оборудованию</h2>
 
-    <h2>Ввод статистики по оборудованию</h2>
-
-
-        <form action="" method="POST" class="form-inline">
-            {% csrf_token %}
-            <label for="date">На дату:</label>
-            {{ form_date.date }}
-            <input type="submit" value="Принять" class="btn btn-primary" />
-        </form>
-
-<!--
-    <form action="" method="GET">
-        <label for="date_inp">Отобразить на дату:</label>
-        <input type="date" id="date_inp" name="date" />
-        <input type="submit" value="Принять" />
+    <form action="" method="POST" class="form-inline">
+        {% csrf_token %}
+        <label for="date">На дату:</label>
+        {{ form_date.date }}
+        <input type="submit" value="Принять" class="btn btn-primary" />
     </form>
--->
 
-    <table class="table table-condensed table-hover">
-        {% for unit in equipment_list %}
-            <tr>
-            {% if unit.0.journal %}
-                {% if not unit.0.journal.stat_by_parent %}
-                    <td>
-                        {{ unit.1|make_ident }}<strong>{{ unit.0.name }}</strong>
-                    </td>
-                    <form class="simple-record-form" action="{% url 'statistics:simple_record_new' unit.0.journal.id%}" method="POST" remote="true" role="form">
-                    <td>
-                        {% csrf_token %}
-                        <input type="hidden" name="journal_id" value="{{ unit.0.journal.id }}" />
-                        <input type="date" name="date" class="records_date" value="{{ records_dict.date|date:'d.m.Y' }}" readonly size="10" />
-                    </td>
-                    <td id="work-interval-{{unit.0.journal.id}}">
-                        {% if unit.0.journal.id in records_dict %}
-                            {% with rec=records_dict|key:unit.0.journal.id %}
-                                {{ rec.0|interval }}
-                            {% endwith %}
-                        {% else %}
-                            нет данных
-                        {% endif %}
-                    </td>
-                    <td>
-                        Работа:
-                        <input type="text" name="work" class="work_times" value="00:00" size="5" />
-                        Пуски:
-                        <input type="number" name="pusk_cnt" min="0" max="5" value="0" style="width: 40px;" />
-                        Остановы:
-                        <input type="number" name="ostanov_cnt" min="0" max="5" value="0" style="width: 40px;" />
-                        {% if unit.0.journal.id in records_dict %}
-                            {% with rec=records_dict|key:unit.0.journal.id %}
-                                <input type="hidden" name="record_id" value="{{ rec.1 }}">
-                            {% endwith %}
-                        {% endif %}
-                        <input type="submit" value="<<" />
-                    </td>
-                    </form>
-                {% endif %}
-            {% else %}
-                <td colspan="4"><h3>{{ unit.1|make_ident }}{{ unit.0.name }}</h3></td>
+<table class="table table-condensed table-hover">
+    {% for unit in equipment_list %}
+        <tr>
+        {% if unit.0.journal %}
+            {% if not unit.0.journal.stat_by_parent %}
+                <td>
+                    {{ unit.1|make_ident }}<strong>{{ unit.0.name }}</strong>
+                </td>
+                <form class="simple-record-form" action="{% url 'statistics:simple_record_new' unit.0.journal.id %}" method="POST" role="form">
+                <td>
+                    {% csrf_token %}
+                    <input type="hidden" name="journal_id" value="{{ unit.0.journal.id }}" />
+                    <input type="date" name="date" class="records_date" value="{{ records_dict.date|date:'d.m.Y' }}" readonly size="10" />
+                </td>
+                <td id="work-interval-{{unit.0.journal.id}}">
+                    {% if unit.0.journal.id in records_dict %}
+                        {% with rec=records_dict|key:unit.0.journal.id %}
+                            {{ rec.0|interval }}
+                        {% endwith %}
+                    {% else %}
+                        нет данных
+                    {% endif %}
+                </td>
+                <td>
+                    Работа:
+                    <button type="button" class="btn btn-default just-work" data-journal_id="{{ unit.0.journal.id }}" data-date="{{ records_dict.date|date:'d.m.Y' }}" data-work="24:00" data-pusk_cnt="0" data-ostanov_cnt="0">24:</button>
+                    или
+                    <input type="text" name="work" class="work_times" value="00:00" size="5" />
+                    Пуски:
+                    <input type="number" name="pusk_cnt" min="0" max="5" value="0" style="width: 40px;" />
+                    Остановы:
+                    <input type="number" name="ostanov_cnt" min="0" max="5" value="0" style="width: 40px;" />
+                    {% if unit.0.journal.id in records_dict %}
+                        {% with rec=records_dict|key:unit.0.journal.id %}
+                            <input type="hidden" name="record_id" value="{{ rec.1 }}">
+                        {% endwith %}
+                    {% endif %}
+                    <input type="submit" value="<<" class="btn btn-default"/>
+                </td>
+                </form>
             {% endif %}
-            </tr>
-        {% endfor %}
-    </table>
-    <div id="response-place"></div>
+        {% else %}
+            <td colspan="4"><h3>{{ unit.1|make_ident }}{{ unit.0.name }}</h3></td>
+        {% endif %}
+        </tr>
+    {% endfor %}
+</table>
+<div id="response-place"></div>
 {% endblock content %}
 
 {% block javascript %}
     <script type="text/javascript">
+        function getCookie(name) {
+            var cookieValue = null;
+            if (document.cookie && document.cookie != '') {
+                var cookies = document.cookie.split(';');
+                for (var i = 0; i < cookies.length; i++) {
+                    var cookie = jQuery.trim(cookies[i]);
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
         $(document).ready(function() {
-            $('.simple-record-form').submit(function() {
+            $('.simple-record-form').submit(function(event) {
+                event.preventDefault();
                 $.ajax({
                     data: $(this).serialize(),
                     type: $(this).attr('method'),
                     url: $(this).attr('action'),
                     success: function(data) {
                         $("#work-interval-"+data.journal_id).html(data.work)
+                    }
+                });
+                return false;
+            });
+            $('.just-work').click(function() {
+                var urldata = $(this).data();
+                urldata['csrfmiddlewaretoken'] = getCookie('csrftoken');
+                $.ajax({
+                    url: '/statistics/' + urldata.journal_id + '/simple_record_new',
+                    data: urldata,
+                    type: 'POST',
+                    success: function(data) {
+                        $("#work-interval-"+urldata.journal_id).html(urldata.work)
                     }
                 });
                 return false;
