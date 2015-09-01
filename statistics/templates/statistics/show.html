@@ -91,6 +91,7 @@
     <br />
     <p>
         <a href="{% url 'statistics:index' %}" class="btn btn-default active" role="button">К журналам</a>
+        <a href="{% url 'statistics:journals_on_date' %}" class="btn btn-default active" role="button">К вводу на дату</a>
         <a href="{% url 'statistics:records' journal.id %}" class="btn btn-default active" role="button">Архив записей</a>
     </p>
 {% endblock content %}

@@ -24,7 +24,7 @@
         {% if unit.0.journal %}
             {% if not unit.0.journal.stat_by_parent %}
                 <td>
-                    {{ unit.1|make_ident }}<strong>{{ unit.0.name }}</strong>
+                    <a href="{% url 'statistics:show' unit.0.journal.id %}">{{ unit.1|make_ident }}<strong>{{ unit.0.name }}</strong></a>
                 </td>
                 <form class="simple-record-form" action="{% url 'statistics:simple_record_new' unit.0.journal.id %}" method="POST" role="form">
                 <td>

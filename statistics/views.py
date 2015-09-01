@@ -34,7 +34,15 @@ def journals_on_date(request):
         except AttributeError:
             pass
     unit_list = Unit.tree_list(root)
-    records_dict = Record.get_records_on_date(request.POST.get('date', None))
+    if 'date' in request.POST:
+        jourlnal_date = request.POST['date']
+        request.session['input_date'] = request.POST['date']
+    elif 'input_date' in request.session:
+        jourlnal_date = request.session['input_date']
+    else:
+        jourlnal_date = None
+
+    records_dict = Record.get_records_on_date(jourlnal_date)
     form_date = ChooseDateForm()
     context = {
         'equipment_list': unit_list,
