@@ -3,7 +3,7 @@ import factory
 from . import models
 
 
-class UnitFactory(factory.Factory):
+class UnitFactory(factory.django.DjangoModelFactory):
     """Factory for creation Unit nodes"""
     class Meta:
         model = models.Unit

@@ -1,4 +1,4 @@
-from datetime import timedelta,datetime, date
+from datetime import timedelta, datetime, date
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 
@@ -117,7 +117,7 @@ class Journal(models.Model):
                 for state_name in EXT_STATE_DATA:
                     if data[state_name]:
                         rec.stateitem_set.create(
-                            state=state_name,
+                            state=state_name.upper(),
                             time_in_state=data[state_name])
             rec.save(update_fields=changed_fields)
         else:
@@ -130,7 +130,7 @@ class Journal(models.Model):
                 for state_name in EXT_STATE_DATA:
                     if data[state_name]:
                         rec.stateitem_set.create(
-                            state=state_name,
+                            state=state_name.upper(),
                             time_in_state=data[state_name])
         self.update_state_cache()
         return rec
@@ -272,3 +272,66 @@ class EventItem(models.Model):
     date = models.DateField()
     event = models.CharField(max_length=3,
                              choices=EVENT_CHOICES)
+
+
+class Report(models.Model):
+    """
+    Модель Отчета для определенной группы оборудования. Каждый отчет относится
+    к группе оборудования, но не каждое оборудование имеет отчет.
+    """
+
+    equipment = models.OneToOneField(Unit, on_delete=models.CASCADE)
+    title = models.CharField(max_length=255)
+    is_generalizing = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        verbose_name = 'отчет'
+        verbose_name_plural = 'отчеты'
+
+ITV = 'ITV'
+DT = 'DT'
+PCN = 'PCN'
+OCN = 'OCN'
+TYPE_CHOICES = (
+    (ITV, 'Интервал'),
+    (DT, 'Дата'),
+    (PCN, 'Количество пусков'),
+    (OCN, 'Количество остановов'),
+)
+
+FVZ = 'FVZ'
+FKR = 'FKR'
+FSR = 'FSR'
+FRC = 'FRC'
+FROM_EVENT_CHOICES = (
+    (FVZ, 'ввод/замена'),
+    (FKR, 'капремонт'),
+    (FSR, 'средний ремонт'),
+    (FRC, 'реконструкция'),
+)
+
+
+class Column(models.Model):
+    """
+    Модель конфигурации столбца отчета
+    """
+
+    report = models.ForeignKey(Report, on_delete=models.CASCADE)
+    title = models.CharField(max_length=128)
+    column_type = models.CharField(max_length=3,
+                                   choices=TYPE_CHOICES)
+    from_event = models.CharField(max_length=3,
+                                  choices=FROM_EVENT_CHOICES)
+    element_name_filter = models.CharField(max_length=50,
+                                           blank=True)
+    weigh = models.IntegerField(default=0)
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        verbose_name = 'столбец'
+        verbose_name_plural = 'столбцы'

@@ -21,31 +21,31 @@ def create_record(eq_name='Test equipment'):
     return rec
 
 
-class JournalViewTests(TestCase):
+# class JournalViewTests(TestCase):
 
-    def test_jornal_show(self):
-        '''
-        Вход на страницу журнала (show) позволяет увидеть записи журнала
-        '''
-        rec = create_record()
-        yesturday = datetime.date.today()-datetime.timedelta(days=1)
-        response = self.client.get(
-            reverse('statistics:show',
-                    kwargs={'journal_id': rec.journal.id}))
+#     def test_jornal_show(self):
+#         '''
+#         Вход на страницу журнала (show) позволяет увидеть записи журнала
+#         '''
+#         rec = create_record()
+#         yesturday = datetime.date.today()-datetime.timedelta(days=1)
+#         response = self.client.get(
+#             reverse('statistics:show',
+#                     kwargs={'journal_id': rec.journal.id}))
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, yesturday.strftime('%d.%m.%Y'))
-        self.assertContains(response, '5:00')
+#         self.assertEqual(response.status_code, 200)
+#         self.assertContains(response, yesturday.strftime('%d.%m.%Y'))
+#         self.assertContains(response, '5:00')
 
-    def test_journal_edit_form(self):
-        '''
-        Форма редактирования записи журнала (record_edit) показывает
-        в полях формы данные объекта записи при вызове через GET
-        '''
-        rec = create_record()
-        response = self.client.get(
-            reverse('statistics:record_edit',
-                    kwargs={'journal_id': rec.journal.id, 'record_id': rec.id}))
+#     def test_journal_edit_form(self):
+#         '''
+#         Форма редактирования записи журнала (record_edit) показывает
+#         в полях формы данные объекта записи при вызове через GET
+#         '''
+#         rec = create_record()
+#         response = self.client.get(
+#             reverse('statistics:record_edit',
+#                     kwargs={'journal_id': rec.journal.id, 'record_id': rec.id}))
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, '05:00:00')
+#         self.assertEqual(response.status_code, 200)
+#         self.assertContains(response, '05:00:00')
