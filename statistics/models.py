@@ -73,7 +73,7 @@ class Journal(models.Model):
         else:
             return None
 
-    def get_state_summary(self, date_from=None):
+    def get_state_summary(self, date_from=None, date_to=None):
         '''
         Description: Метод подсчета базовой статистики, возможно,
         от определенной даты
@@ -82,6 +82,8 @@ class Journal(models.Model):
             recs = self.record_set
             if date_from:
                 recs = recs.filter(date__gte=date_from)
+            if date_to:
+                recs = recs.exclude(date__gte=date_to)
             stat = "wd=%s,psk=%d,ost=%d" % (
                 stat_timedelta(recs.aggregate(models.Sum('work'))['work__sum']),
                 recs.aggregate(models.Sum('pusk_cnt'))['pusk_cnt__sum'],
@@ -150,6 +152,18 @@ class Journal(models.Model):
         self.eventitem_set.create(
             date=data['date'],
             event=data['event'])
+
+    def get_journal_or_subjournal_id(self, subunit_name=None):
+        if subunit_name:
+            unit = self.equipment
+            try:
+                subunit = unit.unit_set.filter(name=subunit_name)[0]
+                return subunit.journal.id if subunit.journal else None
+            except IndexError:
+                return None
+
+        else:
+            return self.id
 
 
 class Record(models.Model):
@@ -286,6 +300,27 @@ class Report(models.Model):
 
     def __str__(self):
         return self.title
+
+    def prepare_journals_id_for_report(self):
+        # Создаем таблицу размерностью в отчет, но со ссылками на журналы
+        # Строк и столбцов будет на один меньше, чем в отчете (под заголовки)
+        columns = self.column_set.order_by('weigh')
+        subunits = self.equipment.unit_set
+        journals_links_table = []
+        for subunit in subunits.all():
+            journals_links_table.append([
+                subunit.journal.get_journal_or_subjournal_id(col.element_name_filter)
+                for col in columns.all()
+            ])
+        return journals_links_table
+
+    def prepare_report_data(self, report_date=None):
+        """
+        Метод заполняет данными таблицу для отчета
+        """
+        self.prepare_journal_ids_for_report()
+        report_table = []
+        return report_table
 
     class Meta:
         verbose_name = 'отчет'

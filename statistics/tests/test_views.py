@@ -1,51 +1,32 @@
 from django.test import TestCase
 from django.core.urlresolvers import reverse
-import datetime
+# from datetime import date, timedelta
+
+from statistics.tests import factories
 
 
-from statistics.models import Journal
-from catalog.models import Unit
+class JournalViewTests(TestCase):
 
+    def test_journal_detail_show_stat(self):
+        """
+        Jornal detail view show base work statistic testing
+        """
+        journal = factories.prepare_journal_tree()['full_journal']
+        journal.set_record_data(factories.form_data())
+        response = self.client.get(
+            reverse('statistics:show', kwargs={'journal_id': journal.id}))
 
-def create_record(eq_name='Test equipment'):
-    eq = Unit(name=eq_name)
-    eq.save()
-    journal = Journal(equipment_id=eq.id)
-    journal.save()
-    rec = journal.record_set.create(
-        date=datetime.date.today()-datetime.timedelta(days=1),
-        pusk_cnt=1,
-        ostanov_cnt=1,
-        work=datetime.timedelta(hours=5),
-        period_length=24,)
-    return rec
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '5:00')
 
+    def test_journal_detail_show_ext_stat(self):
+        """
+        Jornal detail view show ext_state if the last exist testing
+        """
+        journal = factories.prepare_journal_tree()['full_journal']
+        journal.set_record_data(factories.form_data())
+        response = self.client.get(
+            reverse('statistics:show', kwargs={'journal_id': journal.id}))
 
-# class JournalViewTests(TestCase):
-
-#     def test_jornal_show(self):
-#         '''
-#         Вход на страницу журнала (show) позволяет увидеть записи журнала
-#         '''
-#         rec = create_record()
-#         yesturday = datetime.date.today()-datetime.timedelta(days=1)
-#         response = self.client.get(
-#             reverse('statistics:show',
-#                     kwargs={'journal_id': rec.journal.id}))
-
-#         self.assertEqual(response.status_code, 200)
-#         self.assertContains(response, yesturday.strftime('%d.%m.%Y'))
-#         self.assertContains(response, '5:00')
-
-#     def test_journal_edit_form(self):
-#         '''
-#         Форма редактирования записи журнала (record_edit) показывает
-#         в полях формы данные объекта записи при вызове через GET
-#         '''
-#         rec = create_record()
-#         response = self.client.get(
-#             reverse('statistics:record_edit',
-#                     kwargs={'journal_id': rec.journal.id, 'record_id': rec.id}))
-
-#         self.assertEqual(response.status_code, 200)
-#         self.assertContains(response, '05:00:00')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '19:00')
