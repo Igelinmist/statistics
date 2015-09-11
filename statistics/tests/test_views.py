@@ -1,8 +1,7 @@
 from django.test import TestCase
 from django.core.urlresolvers import reverse
-# from datetime import date, timedelta
 
-from statistics.tests import factories
+from .helpers_foo import prepare_journal_tree, form_data
 
 
 class JournalViewTests(TestCase):
@@ -11,8 +10,8 @@ class JournalViewTests(TestCase):
         """
         Jornal detail view show base work statistic testing
         """
-        journal = factories.prepare_journal_tree()['full_journal']
-        journal.set_record_data(factories.form_data())
+        journal = prepare_journal_tree()['full_journal']
+        journal.set_record_data(form_data())
         response = self.client.get(
             reverse('statistics:show', kwargs={'journal_id': journal.id}))
 
@@ -23,8 +22,8 @@ class JournalViewTests(TestCase):
         """
         Jornal detail view show ext_state if the last exist testing
         """
-        journal = factories.prepare_journal_tree()['full_journal']
-        journal.set_record_data(factories.form_data())
+        journal = prepare_journal_tree()['full_journal']
+        journal.set_record_data(form_data())
         response = self.client.get(
             reverse('statistics:show', kwargs={'journal_id': journal.id}))
 

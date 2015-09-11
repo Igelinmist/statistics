@@ -3,14 +3,14 @@ from datetime import date, timedelta
 
 from statistics.models import Journal
 from statistics.tests import factories
+from .helpers_foo import prepare_journal_tree, form_data, prepare_test_data_and_report_conf, prepare_test_data_and_report_conf_for_subjournal
 
 
 class JournalModelTest(TestCase):
 
     def test_get_record_data_for_new_record(self):
         '''
-        Для новой записи набор данных пустой\
-        (get_record_data(record_id=None))
+        Модель Journal передает пустой набор данных для новой записи в форму.
         '''
         form_data = Journal.get_record_data()
 
@@ -18,72 +18,72 @@ class JournalModelTest(TestCase):
 
     def test_new_record_creation(self):
         '''
-        Новая запись создается по данным формы\
-        (set_record_data(data, record_id=None, process_ext_states=True))
+        Модель Journal создает запись по данным POST формы\
+        Журнал расширенной статистики.
         '''
-        journal = factories.prepare_journal_tree()['full_journal']
-        journal.set_record_data(factories.form_data())
+        journal = prepare_journal_tree()['full_journal']
+        journal.set_record_data(form_data())
 
         self.assertEqual(journal.record_set.count(), 1)
 
     def test_update_stat_on_new_record_creation(self):
         '''
-        Создание новой записи обновляет статистику\
-        (update_state_cache())
+        Модель Journal обновляет статистику.\
+        При создании записи.
         '''
-        journal = factories.prepare_journal_tree()['full_journal']
-        journal.set_record_data(factories.form_data())
+        journal = prepare_journal_tree()['full_journal']
+        journal.set_record_data(form_data())
 
         self.assertEqual(journal.last_stat, 'wd=5:00,psk=1,ost=1')
 
     def test_update_stat_on_delete_record(self):
         '''
-        Удаление записи обновляет статистику\
-        (update_state_cache())
+        Модель Journal обновляет статистику.\
+        При удалении записи.
         '''
-        journal = factories.prepare_journal_tree()['full_journal']
-        rec = journal.set_record_data(factories.form_data())
+        journal = prepare_journal_tree()['full_journal']
+        rec = journal.set_record_data(form_data())
         journal.delete_record(rec.id)
 
         self.assertEqual(journal.last_stat, 'wd=00:00,psk=0,ost=0')
 
     def test_add_additional_state_on_record_creation(self):
         '''
-        Новая запись с состоянием аварийного ремонта добавляет в базу\
-        state_item запись
+        Модель Journal создает новую запись.\
+        Создает новое состояние (state_item) расширенной статистики.
         '''
-        journal = factories.prepare_journal_tree()['full_journal']
-        rec = journal.set_record_data(factories.form_data())
+        journal = prepare_journal_tree()['full_journal']
+        rec = journal.set_record_data(form_data())
 
         self.assertEqual(rec.stateitem_set.count(), 1)
 
     def test_get_record_data_form_existing_short_record(self):
         '''
-        Подготовка данных для формы редактирования существующей записи\
-        (set_record_data(data, record_id=None, process_ext_states=True))
+        Модель Journal готовит данные для формы редактирования существующей\
+        короткой записи
         '''
-        journal = factories.prepare_journal_tree()['base_journal']
-        rec = journal.set_record_data(factories.form_data())
-        form_data = Journal.get_record_data(rec.id)
+        journal = prepare_journal_tree()['base_journal']
+        rec = journal.set_record_data(form_data())
+        fdata = Journal.get_record_data(rec.id)
 
         self.assertEqual(
-            form_data,
+            fdata,
             {'date': date.today()-timedelta(days=1),
              'work': timedelta(hours=5),
              'pusk_cnt': 1,
              'ostanov_cnt': 1})
 
     def test_get_record_data_form_existing_full_record(self):
-        '''
-        Подготовка данных для формы на базе существующей записи\
-        (get_record_data(record_id=None))
-        '''
-        journal = factories.prepare_journal_tree()['full_journal']
-        rec = journal.set_record_data(factories.form_data())
-        form_data = Journal.get_record_data(rec.id)
+        """
+        Модель Journal готовит данные для формы редактирования существующей\
+        полной записи
+        """
+        journal = prepare_journal_tree()['full_journal']
+        rec = journal.set_record_data(form_data())
+        fdata = Journal.get_record_data(rec.id)
 
         self.assertEqual(
-            form_data,
+            fdata,
             {'date': date.today()-timedelta(days=1),
              'work': timedelta(hours=5),
              'arm': timedelta(hours=19),
@@ -94,6 +94,133 @@ class JournalModelTest(TestCase):
              'rcd': timedelta(0),
              'pusk_cnt': 1,
              'ostanov_cnt': 1})
+
+    def test_get_report_cell_itv_from_vvod(self):
+        """
+        Модель Journal вычисляет отчетные данные для ячейки\
+        число часов работы с ввода
+        """
+        journal_tree = prepare_test_data_and_report_conf(
+            ctype='ITV'
+        )['journal_tree']
+
+        self.assertEqual(
+            journal_tree['full_journal'].get_report_cell(from_event='FVZ'),
+            '100:00'
+        )
+
+    def test_get_report_cell_itv_from_zamena(self):
+        """
+        Модель Journal вычисляет отчетные данные для ячейки\
+        число часов работы с замены
+        """
+        test_journal = prepare_test_data_and_report_conf(
+            fevent='FVZ',
+            ctype='ITV'
+        )['test_journal']
+
+        self.assertEqual(
+            test_journal.get_report_cell(from_event='FVZ'),
+            '60:00'
+        )
+
+    def test_get_report_cell_itv_from_srrem(self):
+        """
+        Модель Journal вычисляет отчетные данные для ячейки\
+        число часов работы со среднего ремонта
+        """
+        test_journal = prepare_test_data_and_report_conf(
+            fevent='FSR',
+            ctype='ITV'
+        )['test_journal']
+
+        self.assertEqual(
+            test_journal.get_report_cell(from_event='FSR'),
+            '60:00'
+        )
+
+    def test_get_report_cell_itv_from_kaprem(self):
+        """
+        Модель Journal вычисляет отчетные данные для ячейки\
+        число часов работы с капремонта
+        """
+        test_journal = prepare_test_data_and_report_conf(
+            fevent='FKR',
+            ctype='ITV'
+        )['test_journal']
+
+        self.assertEqual(
+            test_journal.get_report_cell(from_event='FKR'),
+            '60:00'
+        )
+
+    def test_get_report_cell_pcn_from_vvod(self):
+        """
+        Модель Journal вычисляет отчетные данные для ячейки\
+        кол-во пусков с ввода/замены
+        """
+        test_journal = prepare_test_data_and_report_conf(
+            fevent='FVZ',
+            ctype='PCN'
+        )['test_journal']
+
+        self.assertEqual(
+            test_journal.get_report_cell(
+                summary_type='PCN',
+                from_event='FVZ'
+            ),
+            3
+        )
+
+    def test_get_report_cell_ocn_from_vvod(self):
+        """
+        Модель Journal вычисляет отчетные данные для ячейки\
+        кол-во остановов с ввода/замены
+        """
+        test_journal = prepare_test_data_and_report_conf(
+            fevent='FVZ',
+            ctype='OCN'
+        )['test_journal']
+
+        self.assertEqual(
+            test_journal.get_report_cell(
+                summary_type='OCN',
+                from_event='FVZ'
+            ),
+            3
+        )
+
+    def test_get_report_cell_itv_from_vvod_for_subjournal(self):
+        """
+        Модель Journal вычисляет отчетные данные для ячейки\
+        подчиненный журнал число часов работы с ввода
+        """
+        journal_tree = prepare_test_data_and_report_conf_for_subjournal(
+            ctype='ITV'
+        )['journal_tree']
+
+        self.assertEqual(
+            journal_tree['subjournal'].get_report_cell(from_event='FVZ'),
+            '100:00'
+        )
+
+    def test_get_report_cell_itv_from_zamena_for_subjournal(self):
+        """
+        Модель Journal вычисляет отчетные данные для ячейки\
+        подчиненный журнал число часов работы с замены
+        """
+        journal_tree = prepare_test_data_and_report_conf_for_subjournal(
+            ctype='ITV',
+            replaced=True
+        )['journal_tree']
+
+        self.assertEqual(
+            journal_tree['subjournal'].get_report_cell(from_event='FVZ'),
+            '60:00'
+        )
+
+
+class ReportModelTest(TestCase):
 
     # def test_prepare_base_report_data(self):
     #     """
@@ -121,10 +248,9 @@ class JournalModelTest(TestCase):
 
     def test_prepare_journals_id_for_report(self):
         """
-        Преподготовка данных для отчета - таблица с номерами журналов\
-        prepare_journals_id_for_report(self)
+        Модель Report готовит таблицу с номерами журналов.
         """
-        journal_tree = factories.prepare_journal_tree()
+        journal_tree = prepare_journal_tree()
         equipment = journal_tree['unit_root']
         report = factories.ReportFactory(equipment_id=equipment.id)
         factories.ColumnFactory(
@@ -151,10 +277,10 @@ class JournalModelTest(TestCase):
 
     def test_prepare_journals_id_for_report_with_subunit(self):
         """
-        Преподготовка данных для отчета - таблица с номерами журналов, включая подоборудование\
-        prepare_journals_id_for_report(self)
+        Модель Report готовит таблицу с номерами журналов.\
+        Включаются колонки подоборудования.
         """
-        journal_tree = factories.prepare_journal_tree()
+        journal_tree = prepare_journal_tree()
         equipment = journal_tree['unit_root']
         report = factories.ReportFactory(equipment_id=equipment.id)
         factories.ColumnFactory(
@@ -185,10 +311,10 @@ class JournalModelTest(TestCase):
 
     def test_prepare_journals_id_for_report_with_subunit_included_in_part(self):
         """
-        Преподготовка данных для отчета - таблица с номерами журналов, включая подоборудование, но не у всех\
-        prepare_journals_id_for_report(self)
+        Модель Report готовит таблицу с номерами журналов, включая подоборудование.\
+        Обрабатывается отсутствие заданного подоборудования в составе одного из объектов.
         """
-        journal_tree = factories.prepare_journal_tree()
+        journal_tree = prepare_journal_tree()
         equipment = journal_tree['unit_root']
         report = factories.ReportFactory(equipment_id=equipment.id)
         factories.ColumnFactory(

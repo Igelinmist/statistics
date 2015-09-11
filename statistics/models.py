@@ -44,7 +44,7 @@ class Journal(models.Model):
             ('edit_journal_record', 'Может редактировать запись в журнале'),
             ('delete_journal_record', 'Может удалить запись в журнале'),
             ('create_journal_event', 'Может создать событие в журнале'),
-            ('delete_journal_evtent', 'Может удалить событие в журнале'),
+            ('delete_journal_event', 'Может удалить событие в журнале'),
         )
         default_permissions = []
         verbose_name = 'журнал'
@@ -165,6 +165,41 @@ class Journal(models.Model):
         else:
             return self.id
 
+    def get_report_cell(self, summary_type='ITV',
+                        from_event='FVZ', date_to=None):
+        #TODO Надо предусмотреть входной data_set
+        journal = self.equipment.plant.journal if self.stat_by_parent else self
+        if journal.record_set.count():
+            from_event_dict = {
+                'FVZ': 'ZMN',
+                'FKR': 'VKR',
+                'FSR': 'VSR',
+                'FRC': 'VRC',
+            }
+            try:
+                date_from = self.eventitem_set.filter(
+                    event=from_event_dict[from_event]
+                ).order_by('-date')[0].date
+            except IndexError:
+                date_from = None
+
+            recs = journal.record_set
+            if date_from:
+                recs = recs.filter(date__gte=date_from)
+            if date_to:
+                recs = recs.exclude(date__gte=date_to)
+            if summary_type == 'PCN':
+                return recs.aggregate(models.Sum('pusk_cnt'))['pusk_cnt__sum']
+            elif summary_type == 'OCN':
+                return recs.aggregate(models.Sum('ostanov_cnt'))['ostanov_cnt__sum']
+            else:
+                return stat_timedelta(recs.aggregate(models.Sum('work'))['work__sum'])
+        else:
+            if summary_type in ('PCN', 'OCN'):
+                return 0
+            else:
+                return '00:00'
+
 
 class Record(models.Model):
     """
@@ -265,11 +300,18 @@ class StateItem(models.Model):
 
 
 VVOD = 'VVD'
+VVOD_KR = 'VKR'
+VVOD_SR = 'VSR'
+VVOD_RC = 'VRC'
 ZAMENA = 'ZMN'
 SPISANIE = 'SPS'
+
 EVENT_CHOICES = (
-    (ZAMENA, 'Замена'),
     (VVOD, 'Ввод'),
+    (VVOD_KR, 'Ввод из капремонта'),
+    (VVOD_SR, 'Ввод из ср. ремонта'),
+    (VVOD_RC, 'Ввод из реконструкции'),
+    (ZAMENA, 'Замена'),
     (SPISANIE, 'Списание'),
 )
 EVENT_CHOICES_DICT = dict(EVENT_CHOICES)
@@ -302,8 +344,11 @@ class Report(models.Model):
         return self.title
 
     def prepare_journals_id_for_report(self):
-        # Создаем таблицу размерностью в отчет, но со ссылками на журналы
-        # Строк и столбцов будет на один меньше, чем в отчете (под заголовки)
+        """
+        Подготовка промежуточной таблицы для формирования отчета.
+        В ячейках вместо данных содержится id журнала, из которого необходимо
+        обработать данные.
+        """
         columns = self.column_set.order_by('weigh')
         subunits = self.equipment.unit_set
         journals_links_table = []
