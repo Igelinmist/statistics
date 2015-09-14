@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.core.urlresolvers import reverse
 
 from .helpers_foo import prepare_journal_tree, form_data
+from .helpers_foo import prepare_test_db_for_report
 
 
 class JournalViewTests(TestCase):
@@ -29,3 +30,13 @@ class JournalViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, '19:00')
+
+    def test_reports_index_show(self):
+        """
+        Приложение показывает существующие отчеты
+        """
+        prepare_test_db_for_report()
+        response = self.client.get(reverse('statistics:reports'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Test Report")

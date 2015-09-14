@@ -124,6 +124,25 @@ class JournalModelTest(TestCase):
             '60:00'
         )
 
+    def test_get_report_cell_date_of_zamena(self):
+        """
+        Модель Journal вычисляет отчетные данные для ячейки\
+        дата замены
+        """
+        test_data = prepare_test_data_and_report_conf(
+            fevent='FVZ',
+            ctype='DT'
+        )
+        test_journal = test_data['test_journal']
+        edate = test_data['edate'].strftime("%d.%m.%Y")
+
+        self.assertEqual(
+            test_journal.get_report_cell(
+                from_event='FVZ',
+                summary_type='DT'),
+            edate
+        )
+
     def test_get_report_cell_itv_from_srrem(self):
         """
         Модель Journal вычисляет отчетные данные для ячейки\
@@ -139,6 +158,25 @@ class JournalModelTest(TestCase):
             '60:00'
         )
 
+    def test_get_report_cell_date_of_srrem(self):
+        """
+        Модель Journal вычисляет отчетные данные для ячейки\
+        дата среднего ремонта
+        """
+        test_data = prepare_test_data_and_report_conf(
+            fevent='FSR',
+            ctype='DT'
+        )
+        test_journal = test_data['test_journal']
+        edate = test_data['edate'].strftime("%d.%m.%Y")
+
+        self.assertEqual(
+            test_journal.get_report_cell(
+                from_event='FSR',
+                summary_type='DT'),
+            edate
+        )
+
     def test_get_report_cell_itv_from_kaprem(self):
         """
         Модель Journal вычисляет отчетные данные для ячейки\
@@ -152,6 +190,25 @@ class JournalModelTest(TestCase):
         self.assertEqual(
             test_journal.get_report_cell(from_event='FKR'),
             '60:00'
+        )
+
+    def test_get_report_cell_date_of_kaprem(self):
+        """
+        Модель Journal вычисляет отчетные данные для ячейки\
+        дата капитального ремонта
+        """
+        test_data = prepare_test_data_and_report_conf(
+            fevent='FKR',
+            ctype='DT'
+        )
+        test_journal = test_data['test_journal']
+        edate = test_data['edate'].strftime("%d.%m.%Y")
+
+        self.assertEqual(
+            test_journal.get_report_cell(
+                from_event='FKR',
+                summary_type='DT'),
+            edate
         )
 
     def test_get_report_cell_pcn_from_vvod(self):
@@ -222,30 +279,6 @@ class JournalModelTest(TestCase):
 
 class ReportModelTest(TestCase):
 
-    # def test_prepare_base_report_data(self):
-    #     """
-    #     Подготовка основного массива отчетных данных для технологического узла
-    #     """
-    #     equipment = factories.prepare_journal_tree()['unit_root']
-    #     report = factories.ReportFactory(equipment_id=equipment.id)
-    #     factories.ColumnFactory(
-    #         report_id=report.id,
-    #         title='Наработка с ввода/замены',
-    #         column_type='ITV',
-    #         from_event='FVZ'
-    #     )
-    #     #TODO для замены надо сделать отдельный тест
-    #     report_table = report.prepare_report_data()
-
-    #     self.assertEqual(
-    #         report_table,
-    #         [
-    #             ['Оборудование', 'subunit1', 'subunit2'],
-    #             ['Наработка с ввода/замены', '72:00', '72:00'],
-    #             ['Число пусков', 3, 3],
-    #         ]
-    #     )
-
     def test_prepare_journals_id_for_report(self):
         """
         Модель Report готовит таблицу с номерами журналов.
@@ -266,8 +299,7 @@ class ReportModelTest(TestCase):
             from_event='FVZ'
         )
 
-        ids_table = report.prepare_journals_id_for_report()
-
+        ids_table = report.prepare_journals_id_for_report()['journals_id']
         self.assertEqual(
             ids_table,
             [
@@ -298,7 +330,7 @@ class ReportModelTest(TestCase):
             weigh=2,
         )
 
-        ids_table = report.prepare_journals_id_for_report()
+        ids_table = report.prepare_journals_id_for_report()['journals_id']
 
         self.assertEqual(
             ids_table,
@@ -332,7 +364,7 @@ class ReportModelTest(TestCase):
             weigh=2,
         )
 
-        ids_table = report.prepare_journals_id_for_report()
+        ids_table = report.prepare_journals_id_for_report()['journals_id']
 
         self.assertEqual(
             ids_table,

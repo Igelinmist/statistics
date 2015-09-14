@@ -7,7 +7,7 @@ from datetime import datetime
 from django.http import JsonResponse
 
 
-from .models import Journal, EventItem, Record
+from .models import Journal, EventItem, Record, Report
 from .forms import RecordForm, EventForm, ChooseDateForm
 from catalog.models import Unit
 
@@ -150,3 +150,11 @@ def event_delete(request, journal_id, event_id):
         event.delete()
         return redirect('statistics:show', journal_id=journal_id)
     return render(request, template_name)
+
+
+def reports(request):
+    report_list = Report.objects.all()
+    return render(
+        request,
+        'statistics/reports.html',
+        {'reports': report_list, })

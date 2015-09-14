@@ -167,7 +167,6 @@ class Journal(models.Model):
 
     def get_report_cell(self, summary_type='ITV',
                         from_event='FVZ', date_to=None):
-        #TODO Надо предусмотреть входной data_set
         journal = self.equipment.plant.journal if self.stat_by_parent else self
         if journal.record_set.count():
             from_event_dict = {
@@ -180,6 +179,8 @@ class Journal(models.Model):
                 date_from = self.eventitem_set.filter(
                     event=from_event_dict[from_event]
                 ).order_by('-date')[0].date
+                if summary_type == 'DT':
+                    return date_from.strftime("%d.%m.%Y")
             except IndexError:
                 date_from = None
 
@@ -197,6 +198,8 @@ class Journal(models.Model):
         else:
             if summary_type in ('PCN', 'OCN'):
                 return 0
+            elif summary_type == 'dt':
+                return '-'
             else:
                 return '00:00'
 
@@ -349,22 +352,42 @@ class Report(models.Model):
         В ячейках вместо данных содержится id журнала, из которого необходимо
         обработать данные.
         """
-        columns = self.column_set.order_by('weigh')
-        subunits = self.equipment.unit_set
-        journals_links_table = []
-        for subunit in subunits.all():
-            journals_links_table.append([
+        columns = self.column_set.order_by('weigh').all()
+        subunits = self.equipment.unit_set.order_by('name').all()
+        journals_id_table = []
+        for subunit in subunits:
+            journals_id_table.append([
                 subunit.journal.get_journal_or_subjournal_id(col.element_name_filter)
-                for col in columns.all()
+                for col in columns
             ])
-        return journals_links_table
+        return {
+            'journals_id': journals_id_table,
+            'columns': columns,
+            'subunits': subunits
+        }
 
     def prepare_report_data(self, report_date=None):
         """
         Метод заполняет данными таблицу для отчета
         """
-        self.prepare_journal_ids_for_report()
-        report_table = []
+        report_data = self.prepare_journals_id_for_report()
+        journals_id = report_data['journals_id']
+        columns = report_data['columns']
+        subunits = report_data['subunits']
+        report_table = [
+            [subunit.name] + [
+                Journal.objects.get(
+                    pk=journals_id[indxr][indxc]
+                ).get_report_cell(
+                    from_event=col.from_event,
+                    date_to=report_date
+                )
+                for (indxc, col) in enumerate(columns)
+            ]
+            for (indxr, subunit) in enumerate(subunits)
+        ]
+        titles = ['Оборудование'] + [col.title for col in columns]
+        report_table = [titles] + report_table
         return report_table
 
     class Meta:

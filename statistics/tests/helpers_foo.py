@@ -55,6 +55,7 @@ def prepare_test_data_and_report_conf(ctype='ITV',
         RecordFactory(journal_id=journal_tree['full_journal'].id)
     equipment = journal_tree['unit_root']
     test_journal = journal_tree['full_journal']
+    edate = None
     if fevent:
         edate = test_journal.record_set.order_by('date').all()[2].date
         if fevent == 'FKR':
@@ -88,6 +89,8 @@ def prepare_test_data_and_report_conf(ctype='ITV',
     return {
         'journal_tree': journal_tree,
         'test_journal': test_journal,
+        'report': report,
+        'edate': edate,
     }
 
 
@@ -116,4 +119,35 @@ def prepare_test_data_and_report_conf_for_subjournal(ctype='ITV',
     return {
         'journal_tree': journal_tree,
         'test_journal': test_journal,
+        'report': report,
     }
+
+
+def prepare_test_db_for_report():
+    journal_tree = prepare_journal_tree()
+    for i in range(5):
+        RecordFactory(journal_id=journal_tree['full_journal'].id)
+    for i in range(5):
+        RecordFactory(journal_id=journal_tree['base_journal'].id)
+    equipment = journal_tree['unit_root']
+    report = ReportFactory(equipment_id=equipment.id)
+    ColumnFactory(
+        report_id=report.id,
+        title='Наработка с ввода/замены',
+        column_type='ITV',
+        from_event='FVZ',
+    )
+    ColumnFactory(
+        report_id=report.id,
+        title='Кол-во пусков',
+        column_type='PCN',
+        from_event='FVZ',
+    )
+    ColumnFactory(
+        report_id=report.id,
+        title='Наработка detail1',
+        column_type='ITV',
+        from_event='FVZ',
+        element_name_filter='detail1'
+    )
+    return report
