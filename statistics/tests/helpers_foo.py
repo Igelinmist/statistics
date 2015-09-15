@@ -49,14 +49,15 @@ def form_data():
 
 
 def prepare_test_data_and_report_conf(ctype='ITV',
-                                      fevent=None):
+                                      fevent=None,
+                                      create_event=True):
     journal_tree = prepare_journal_tree()
     for i in range(5):
         RecordFactory(journal_id=journal_tree['full_journal'].id)
     equipment = journal_tree['unit_root']
     test_journal = journal_tree['full_journal']
     edate = None
-    if fevent:
+    if fevent and create_event:
         edate = test_journal.record_set.order_by('date').all()[2].date
         if fevent == 'FKR':
             test_journal.eventitem_set.create(
@@ -150,4 +151,4 @@ def prepare_test_db_for_report():
         from_event='FVZ',
         element_name_filter='detail1'
     )
-    return report
+    return {'report': report, }

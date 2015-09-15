@@ -49,8 +49,10 @@ class RecordForm(forms.Form):
 
 class EventForm(forms.Form):
     date = forms.DateField(
-        initial=date.today()-timedelta(days=1),
-        label='Дата')
+        widget=DateTimePicker(options={"locale": "ru",
+                                       "pickTime": False}),
+        label='Дата и время:',
+    )
     event = forms.ChoiceField(
         choices=EVENT_CHOICES,
         label='Событие',
@@ -59,7 +61,7 @@ class EventForm(forms.Form):
 
 class ChooseDateForm(forms.Form):
     date = forms.DateField(
-        widget=DateTimePicker(options={"format": "DD.MM.YYYY",
+        widget=DateTimePicker(options={"locale": "ru",
                                        "pickTime": False}),
         label='На дату:',
-        )
+    )

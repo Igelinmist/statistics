@@ -9,10 +9,11 @@ from .helpers_foo import prepare_journal_tree, form_data, prepare_test_data_and_
 class JournalModelTest(TestCase):
 
     def test_get_record_data_for_new_record(self):
-        '''
+        """
         Модель Journal передает пустой набор данных для новой записи в форму.
-        '''
-        form_data = Journal.get_record_data()
+        """
+        journal = prepare_journal_tree()['full_journal']
+        form_data = journal.get_record_data()
 
         self.assertEqual(form_data, None)
 
@@ -64,7 +65,7 @@ class JournalModelTest(TestCase):
         '''
         journal = prepare_journal_tree()['base_journal']
         rec = journal.set_record_data(form_data())
-        fdata = Journal.get_record_data(rec.id)
+        fdata = journal.get_record_data(rec.id)
 
         self.assertEqual(
             fdata,
@@ -80,7 +81,7 @@ class JournalModelTest(TestCase):
         """
         journal = prepare_journal_tree()['full_journal']
         rec = journal.set_record_data(form_data())
-        fdata = Journal.get_record_data(rec.id)
+        fdata = journal.get_record_data(rec.id)
 
         self.assertEqual(
             fdata,
@@ -106,7 +107,7 @@ class JournalModelTest(TestCase):
 
         self.assertEqual(
             journal_tree['full_journal'].get_report_cell(from_event='FVZ'),
-            '100:00'
+            '100'
         )
 
     def test_get_report_cell_itv_from_zamena(self):
@@ -121,7 +122,7 @@ class JournalModelTest(TestCase):
 
         self.assertEqual(
             test_journal.get_report_cell(from_event='FVZ'),
-            '60:00'
+            '60'
         )
 
     def test_get_report_cell_date_of_zamena(self):
@@ -143,6 +144,25 @@ class JournalModelTest(TestCase):
             edate
         )
 
+    def test_get_report_cell_date_of_zamena_without_event(self):
+        """
+        Модель Journal вычисляет отчетные данные для ячейки\
+        дата замены, но замена отсутствует
+        """
+        test_data = prepare_test_data_and_report_conf(
+            fevent='FVZ',
+            ctype='DT',
+            create_event=False,
+        )
+        test_journal = test_data['test_journal']
+
+        self.assertEqual(
+            test_journal.get_report_cell(
+                from_event='FVZ',
+                summary_type='DT'),
+            '-'
+        )
+
     def test_get_report_cell_itv_from_srrem(self):
         """
         Модель Journal вычисляет отчетные данные для ячейки\
@@ -155,7 +175,7 @@ class JournalModelTest(TestCase):
 
         self.assertEqual(
             test_journal.get_report_cell(from_event='FSR'),
-            '60:00'
+            '60'
         )
 
     def test_get_report_cell_date_of_srrem(self):
@@ -189,7 +209,23 @@ class JournalModelTest(TestCase):
 
         self.assertEqual(
             test_journal.get_report_cell(from_event='FKR'),
-            '60:00'
+            '60'
+        )
+
+    def test_get_report_cell_itv_from_kaprem_without_event(self):
+        """
+        Модель Journal вычисляет отчетные данные для ячейки\
+        число часов работы с капремонта в отсутствии капремонта
+        """
+        test_journal = prepare_test_data_and_report_conf(
+            fevent='FKR',
+            ctype='ITV',
+            create_event=False,
+        )['test_journal']
+
+        self.assertEqual(
+            test_journal.get_report_cell(from_event='FKR'),
+            '-'
         )
 
     def test_get_report_cell_date_of_kaprem(self):
@@ -258,7 +294,7 @@ class JournalModelTest(TestCase):
 
         self.assertEqual(
             journal_tree['subjournal'].get_report_cell(from_event='FVZ'),
-            '100:00'
+            '100'
         )
 
     def test_get_report_cell_itv_from_zamena_for_subjournal(self):
@@ -273,7 +309,7 @@ class JournalModelTest(TestCase):
 
         self.assertEqual(
             journal_tree['subjournal'].get_report_cell(from_event='FVZ'),
-            '60:00'
+            '60'
         )
 
 

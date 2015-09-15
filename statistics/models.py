@@ -5,11 +5,45 @@ from django.db import models
 from catalog.models import Unit
 
 
-STANDARD_STATE_DATA = ('date', 'work',
-                       'ostanov_cnt', 'pusk_cnt')
+STATE_CHOICES = (
+    ('RSV', 'Резерв'),
+    ('TRM', 'Тек. ремонт'),
+    ('ARM', 'Ав. ремонт'),
+    ('KRM', 'Кап. ремонт'),
+    ('SRM', 'Сред. ремонт'),
+    ('RCD', 'Реконструкция'),
+)
+
+EVENT_CHOICES = (
+    ('VVD', 'Ввод'),
+    ('VKR', 'Ввод из капремонта'),
+    ('VSR', 'Ввод из ср. ремонта'),
+    ('VRC', 'Ввод из реконструкции'),
+    ('ZMN', 'Замена'),
+    ('SPS', 'Списание'),
+)
+EVENT_CHOICES_DICT = dict(EVENT_CHOICES)
+
+TYPE_CHOICES = (
+    ('ITV', 'Интервал'),
+    ('DT', 'Дата'),
+    ('PCN', 'Количество пусков'),
+    ('OCN', 'Количество остановов'),
+)
+
+FROM_EVENT_CHOICES = (
+    ('FVZ', 'ввод/замена'),
+    ('FKR', 'капремонт'),
+    ('FSR', 'средний ремонт'),
+    ('FRC', 'реконструкция'),
+)
+
+STANDARD_STATE_DATA = ('date', 'work', 'ostanov_cnt', 'pusk_cnt')
+
 EXT_STATE_DATA = ('rsv', 'arm', 'trm', 'krm', 'srm', 'rcd')
 
 
+# Common functions
 def default_stat():
     return "wd=00:00,psk=0,ost=0"
 
@@ -19,6 +53,14 @@ def stat_timedelta(time_delta):
     hours, remainder = divmod(sec, 3600)
     minutes, sec = divmod(remainder, 60)
     return '%d:%02d' % (int(hours), int(minutes))
+
+
+def stat_timedelta_for_report(time_delta):
+    sec = time_delta.total_seconds()
+    hours, remainder = divmod(sec, 3600)
+    if remainder >= 1800:
+        hours += 1
+    return str(int(hours))
 
 
 class Journal(models.Model):
@@ -54,17 +96,17 @@ class Journal(models.Model):
         plant_name = self.equipment.plant.name if self.equipment.plant else '-'
         return plant_name + ' \ ' + self.equipment.name
 
-    def get_record_data(record_id=None):
-        '''
-        Description: Функция получения данных для инициализации полей формы
+    def get_record_data(self, record_id=None):
+        """
+        Description: Метод получения данных для инициализации полей формы
         существующей записью, включая расширенные состояния при наличии
-        '''
+        """
         data = {}
         if record_id:
-            rec = Record.objects.get(pk=record_id)
+            rec = self.record_set.get(pk=record_id)
             for name in STANDARD_STATE_DATA:
                 data[name] = rec.__getattribute__(name)
-            if rec.journal.extended_stat:
+            if self.extended_stat:
                 for state in EXT_STATE_DATA:
                     data[state] = timedelta(seconds=0)
                 for state_item in rec.stateitem_set.all():
@@ -74,10 +116,10 @@ class Journal(models.Model):
             return None
 
     def get_state_summary(self, date_from=None, date_to=None):
-        '''
+        """
         Description: Метод подсчета базовой статистики, возможно,
         от определенной даты
-        '''
+        """
         if self.record_set.count():
             recs = self.record_set
             if date_from:
@@ -168,21 +210,25 @@ class Journal(models.Model):
     def get_report_cell(self, summary_type='ITV',
                         from_event='FVZ', date_to=None):
         journal = self.equipment.plant.journal if self.stat_by_parent else self
+        from_event_to_event_dict = {
+            'FVZ': 'ZMN',
+            'FKR': 'VKR',
+            'FSR': 'VSR',
+            'FRC': 'VRC',
+        }
         if journal.record_set.count():
-            from_event_dict = {
-                'FVZ': 'ZMN',
-                'FKR': 'VKR',
-                'FSR': 'VSR',
-                'FRC': 'VRC',
-            }
             try:
                 date_from = self.eventitem_set.filter(
-                    event=from_event_dict[from_event]
+                    event=from_event_to_event_dict[from_event]
                 ).order_by('-date')[0].date
                 if summary_type == 'DT':
                     return date_from.strftime("%d.%m.%Y")
             except IndexError:
                 date_from = None
+                if from_event != 'FVZ':
+                    return '-'
+                elif summary_type == 'DT':
+                    return '-'
 
             recs = journal.record_set
             if date_from:
@@ -192,9 +238,13 @@ class Journal(models.Model):
             if summary_type == 'PCN':
                 return recs.aggregate(models.Sum('pusk_cnt'))['pusk_cnt__sum']
             elif summary_type == 'OCN':
-                return recs.aggregate(models.Sum('ostanov_cnt'))['ostanov_cnt__sum']
+                return recs.aggregate(
+                    models.Sum('ostanov_cnt')
+                )['ostanov_cnt__sum']
             else:
-                return stat_timedelta(recs.aggregate(models.Sum('work'))['work__sum'])
+                return stat_timedelta_for_report(
+                    recs.aggregate(models.Sum('work'))['work__sum']
+                )
         else:
             if summary_type in ('PCN', 'OCN'):
                 return 0
@@ -269,21 +319,6 @@ class Record(models.Model):
     class Meta:
         default_permissions = []
 
-RESERV = 'RSV'
-TEK_REM = 'TRM'
-AV_REM = 'ARM'
-KAP_REM = 'KRM'
-SR_REM = 'SRM'
-RECONSTRUCTION = 'RCD'
-STATE_CHOICES = (
-    (RESERV, 'Резерв'),
-    (TEK_REM, 'Тек. ремонт'),
-    (AV_REM, 'Ав. ремонт'),
-    (KAP_REM, 'Кап. ремонт'),
-    (SR_REM, 'Сред. ремонт'),
-    (RECONSTRUCTION, 'Реконструкция'),
-)
-
 
 class StateItem(models.Model):
     """
@@ -294,30 +329,12 @@ class StateItem(models.Model):
     record = models.ForeignKey('Record', on_delete=models.CASCADE)
     state = models.CharField(max_length=3,
                              choices=STATE_CHOICES,
-                             default=RESERV,
+                             default='RSV',
                              db_index=True)
     time_in_state = models.DurationField()
 
     class Meta:
         default_permissions = []
-
-
-VVOD = 'VVD'
-VVOD_KR = 'VKR'
-VVOD_SR = 'VSR'
-VVOD_RC = 'VRC'
-ZAMENA = 'ZMN'
-SPISANIE = 'SPS'
-
-EVENT_CHOICES = (
-    (VVOD, 'Ввод'),
-    (VVOD_KR, 'Ввод из капремонта'),
-    (VVOD_SR, 'Ввод из ср. ремонта'),
-    (VVOD_RC, 'Ввод из реконструкции'),
-    (ZAMENA, 'Замена'),
-    (SPISANIE, 'Списание'),
-)
-EVENT_CHOICES_DICT = dict(EVENT_CHOICES)
 
 
 class EventItem(models.Model):
@@ -380,6 +397,7 @@ class Report(models.Model):
                     pk=journals_id[indxr][indxc]
                 ).get_report_cell(
                     from_event=col.from_event,
+                    summary_type=col.column_type,
                     date_to=report_date
                 )
                 for (indxc, col) in enumerate(columns)
@@ -393,28 +411,6 @@ class Report(models.Model):
     class Meta:
         verbose_name = 'отчет'
         verbose_name_plural = 'отчеты'
-
-ITV = 'ITV'
-DT = 'DT'
-PCN = 'PCN'
-OCN = 'OCN'
-TYPE_CHOICES = (
-    (ITV, 'Интервал'),
-    (DT, 'Дата'),
-    (PCN, 'Количество пусков'),
-    (OCN, 'Количество остановов'),
-)
-
-FVZ = 'FVZ'
-FKR = 'FKR'
-FSR = 'FSR'
-FRC = 'FRC'
-FROM_EVENT_CHOICES = (
-    (FVZ, 'ввод/замена'),
-    (FKR, 'капремонт'),
-    (FSR, 'средний ремонт'),
-    (FRC, 'реконструкция'),
-)
 
 
 class Column(models.Model):
@@ -438,3 +434,4 @@ class Column(models.Model):
     class Meta:
         verbose_name = 'столбец'
         verbose_name_plural = 'столбцы'
+        ordering = ['weigh']

@@ -40,3 +40,17 @@ class JournalViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Test Report")
+
+    def test_report_show(self):
+        """
+        Приложение показывает отчет
+        """
+        report = prepare_test_db_for_report()['report']
+        response = self.client.get(reverse(
+            'statistics:report',
+            kwargs={'report_id': report.id})
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Test Report")
+        self.assertContains(response, "Наработка с ввода/замены")

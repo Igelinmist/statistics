@@ -1,6 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
 <h2>Отчеты</h2>
 <ul>
 {% for report in reports %}
-    <li>{{report.title}}</li>
+    <li>
+    <a href="{% url 'statistics:report' report.id%}">
+    {{report.title}}
+    </a>
+    </li>
 {% endfor %}
 </ul>
+{% endblock content %}

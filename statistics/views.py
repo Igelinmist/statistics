@@ -53,14 +53,15 @@ def journals_on_date(request):
 
 def show(request, journal_id):
     journal = get_object_or_404(Journal, pk=journal_id)
-    record_list = journal.get_last_records()
+    record_list = journal.get_last_records(depth=5)
     event_list = journal.eventitem_set.order_by('-date')[:3]
     form = EventForm(None)
     context = {
         'journal': journal,
         'record_list': record_list,
         'event_list': event_list,
-        'form': form, }
+        'form': form,
+    }
     return render(
         request,
         'statistics/show.html',
@@ -116,7 +117,7 @@ def simple_record_create(request, journal_id):
 
 def record_update(request, journal_id, record_id):
     journal = get_object_or_404(Journal, pk=journal_id)
-    form = RecordForm(request.POST or Journal.get_record_data(record_id),
+    form = RecordForm(request.POST or journal.get_record_data(record_id),
                       journal=journal)
     if request.POST and form.is_valid():
         journal.set_record_data(form.cleaned_data, record_id)
@@ -158,3 +159,17 @@ def reports(request):
         request,
         'statistics/reports.html',
         {'reports': report_list, })
+
+
+def report_show(request, report_id):
+    report = get_object_or_404(Report, pk=report_id)
+    report_table = report.prepare_report_data()
+    context = {
+        'report': report,
+        'rtable': report_table,
+    }
+    return render(
+        request,
+        'statistics/report.html',
+        context
+    )
