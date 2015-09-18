@@ -173,11 +173,28 @@ def reports(request):
 
 def report_show(request):
     report = get_object_or_404(Report, pk=request.GET['report_id'])
-    report_table = report.prepare_report_data(
-        report_date=datetime.strptime(request.GET['date'], '%d.%m.%Y').strftime('%Y-%m-%d'))
+    report_query_date = datetime.strptime(
+        request.GET['date'],
+        '%d.%m.%Y'
+    ).strftime('%Y-%m-%d')
+    report_reportes = []
+    if report.is_generalizing:
+        for eq in report.equipment.unit_set.order_by('name').all():
+            try:
+                temp_report = eq.report
+                temp_report_table = temp_report.prepare_report_data(
+                    report_date=report_query_date
+                )
+                report_reportes.append((temp_report, temp_report_table))
+            except Report.DoesNotExist:
+                pass
+    else:
+        report_reportes.append(
+            (report,
+             report.prepare_report_data(report_date=report_query_date))
+        )
     context = {
-        'report': report,
-        'rtable': report_table,
+        'rdata': report_reportes,
         'rdate': request.GET['date'],
     }
     return render(

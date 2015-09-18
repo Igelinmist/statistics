@@ -1,4 +1,5 @@
 <h2>Отчет на дату {{ rdate }}</h2>
+{% for report, rtable in rdata %}
 <h2>{{ report.title }}</h2>
 <table>
     {% for row in rtable %}
@@ -9,3 +10,4 @@
         </tr>
     {% endfor %}
 </table>
+{% endfor %}
