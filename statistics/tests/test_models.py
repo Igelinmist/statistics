@@ -1,7 +1,7 @@
 from django.test import TestCase
 from datetime import date, timedelta
 
-from statistics.models import Report
+from statistics.models.report import Report
 from statistics.tests import factories
 from .helpers_foo import prepare_journal_tree, form_data
 from .helpers_foo import prepare_test_data_and_report_conf

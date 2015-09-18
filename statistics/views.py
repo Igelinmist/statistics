@@ -7,7 +7,8 @@ from datetime import datetime
 from django.http import JsonResponse
 
 
-from .models import Journal, EventItem, Record, Report
+from .models.journal import Journal, EventItem, Record
+from .models.report import Report
 from .forms import RecordForm, EventForm, ChooseDateForm, ChooseReportForm
 from catalog.models import Unit
 

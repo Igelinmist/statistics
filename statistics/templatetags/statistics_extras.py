@@ -1,6 +1,6 @@
 from django import template
 
-from statistics.models import EVENT_CHOICES_DICT
+from statistics.models.journal import EVENT_CHOICES_DICT
 
 register = template.Library()
 

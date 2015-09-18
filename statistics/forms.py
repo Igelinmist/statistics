@@ -3,7 +3,7 @@ from bootstrap3_datetime.widgets import DateTimePicker
 from django import forms
 from datetime import timedelta, date
 
-from .models import EVENT_CHOICES
+from .models.journal import EVENT_CHOICES
 
 
 class RecordForm(forms.Form):

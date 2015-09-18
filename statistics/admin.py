@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from .models import Journal, Report, Column
+from .models.journal import Journal
+from .models.report import Report, Column
 
 
 class ColumnInline(admin.TabularInline):

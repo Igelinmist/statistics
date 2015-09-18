@@ -1,7 +1,8 @@
 from datetime import timedelta, date
 import factory
 
-from statistics.models import Journal, Record, Report, Column
+from statistics.models.journal import Journal, Record
+from statistics.models.report import Report, Column
 
 
 class JournalFactory(factory.django.DjangoModelFactory):
