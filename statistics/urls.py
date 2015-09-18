@@ -26,5 +26,5 @@ urlpatterns = [
         views.event_delete,
         name='event_delete'),
     url(r'^reports/$', views.reports, name='reports'),
-    url(r'^reports/(?P<report_id>\d+)$', views.report_show, name='report'),
+    url(r'^reports/viewreport$', views.report_show, name='report_show'),
 ]

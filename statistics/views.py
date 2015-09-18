@@ -171,12 +171,14 @@ def reports(request):
         {'form': form, })
 
 
-def report_show(request, report_id):
-    report = get_object_or_404(Report, pk=report_id)
-    report_table = report.prepare_report_data()
+def report_show(request):
+    report = get_object_or_404(Report, pk=request.GET['report_id'])
+    report_table = report.prepare_report_data(
+        report_date=datetime.strptime(request.GET['date'], '%d.%m.%Y').strftime('%Y-%m-%d'))
     context = {
         'report': report,
         'rtable': report_table,
+        'rdate': request.GET['date'],
     }
     return render(
         request,

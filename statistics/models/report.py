@@ -91,7 +91,9 @@ class Report(models.Model):
         equipment_tree = root_unit.unit_tree()
         for eq, ident in equipment_tree:
             if unit_has_report(eq):
-                report_set.append((eq.report.id, eq.report.title))
+                report_set.append(
+                    (eq.report.id, '--' * ident + eq.report.title)
+                )
         return report_set
 
     class Meta:

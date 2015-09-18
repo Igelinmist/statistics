@@ -75,12 +75,16 @@ class ChooseReportForm(forms.Form):
         label='На дату:',
     )
     CHOICWS = ((1, 'test'), )
-    report_id = forms.ChoiceField(widget=forms.RadioSelect, choices=())
+    report_id = forms.ChoiceField(
+        widget=forms.Select,
+        label='отчет:',
+        choices=(),
+    )
 
     def __init__(self, choices=None, *args, **kwargs):
         self.choices = kwargs.pop('choices', None)
         super(ChooseReportForm, self).__init__(*args, **kwargs)
         if choices:
             self.fields['report_id'] = forms.ChoiceField(
-                widget=forms.RadioSelect, choices=choices
+                widget=forms.Select, label='отчет:', choices=choices
             )

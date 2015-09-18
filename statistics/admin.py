@@ -11,7 +11,7 @@ class ColumnInline(admin.TabularInline):
 
 class ReportAdmin(admin.ModelAdmin):
     fieldsets = [
-        (None, {'fields': ['title', 'equipment']}),
+        (None, {'fields': ['title', 'equipment', 'is_generalizing']}),
     ]
     inlines = [ColumnInline]
 
