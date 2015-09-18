@@ -8,32 +8,33 @@ from django.http import JsonResponse
 
 
 from .models import Journal, EventItem, Record, Report
-from .forms import RecordForm, EventForm, ChooseDateForm
+from .forms import RecordForm, EventForm, ChooseDateForm, ChooseReportForm
 from catalog.models import Unit
 
 
 def index(request):
-    root = None
+    root = Unit.objects.filter(plant=None)[0]
     if request.user.is_authenticated():
         try:
             root = Unit.objects.get(name=request.user.profile.
                                     responsible_for_equipment.name)
         except AttributeError:
             pass
-    unit_list = Unit.tree_list(root)
+    unit_list = root.unit_tree()
+
     context = {'equipment_list': unit_list}
     return render(request, 'statistics/index.html', context)
 
 
 def journals_on_date(request):
-    root = None
+    root = Unit.objects.filter(plant=None)[0]
     if request.user.is_authenticated():
         try:
             root = Unit.objects.get(name=request.user.profile.
                                     responsible_for_equipment.name)
         except AttributeError:
             pass
-    unit_list = Unit.tree_list(root)
+    unit_list = root.unit_tree()
     if 'date' in request.POST:
         jourlnal_date = request.POST['date']
         request.session['input_date'] = request.POST['date']
@@ -154,11 +155,19 @@ def event_delete(request, journal_id, event_id):
 
 
 def reports(request):
-    report_list = Report.objects.all()
+    root = Unit.objects.filter(plant=None)[0]
+    if request.user.is_authenticated():
+        try:
+            root = Unit.objects.get(name=request.user.profile.
+                                    responsible_for_equipment.name)
+        except AttributeError:
+            pass
+    report_choices = Report.get_reports_collection(root)
+    form = ChooseReportForm(choices=report_choices)
     return render(
         request,
         'statistics/reports.html',
-        {'reports': report_list, })
+        {'form': form, })
 
 
 def report_show(request, report_id):

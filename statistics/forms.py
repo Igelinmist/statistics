@@ -50,8 +50,9 @@ class RecordForm(forms.Form):
 class EventForm(forms.Form):
     date = forms.DateField(
         widget=DateTimePicker(options={"locale": "ru",
+                                       "startDate": "01.01.1945",
                                        "pickTime": False}),
-        label='Дата и время:',
+        label='Дата события:',
     )
     event = forms.ChoiceField(
         choices=EVENT_CHOICES,
@@ -65,3 +66,21 @@ class ChooseDateForm(forms.Form):
                                        "pickTime": False}),
         label='На дату:',
     )
+
+
+class ChooseReportForm(forms.Form):
+    date = forms.DateField(
+        widget=DateTimePicker(options={"locale": "ru",
+                                       "pickTime": False}),
+        label='На дату:',
+    )
+    CHOICWS = ((1, 'test'), )
+    report_id = forms.ChoiceField(widget=forms.RadioSelect, choices=())
+
+    def __init__(self, choices=None, *args, **kwargs):
+        self.choices = kwargs.pop('choices', None)
+        super(ChooseReportForm, self).__init__(*args, **kwargs)
+        if choices:
+            self.fields['report_id'] = forms.ChoiceField(
+                widget=forms.RadioSelect, choices=choices
+            )

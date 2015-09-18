@@ -37,6 +37,35 @@ class Unit(models.Model):
         get_tree(knot_dict, tree_list, 0, root_unit)
         return tree_list
 
+    def unit_tree(self):
+        """
+        Метод строит дерево входящих объектов
+        """
+        def get_knot_dict(input_set):
+            res = {}
+            for unit in input_set:
+                if unit.plant_id in res:
+                    res[unit.plant_id].append(unit)
+                else:
+                    res[unit.plant_id] = [unit]
+            return res
+
+        def get_tree(knot_dict, tree, ident=0, node=None):
+            if node:
+                tree.append((node, ident))
+            ident += 1
+            for branch_object in knot_dict[node.id if node else None]:
+                if branch_object.id in knot_dict:
+                    get_tree(knot_dict, tree, ident, branch_object)
+                else:
+                    tree.append((branch_object, ident))
+
+        units = Unit.objects.all()
+        tree = []
+        knot_dict = get_knot_dict(units)
+        get_tree(knot_dict, tree, 0, self)
+        return tree
+
     def __str__(self):
         if self.plant is None:
             plant_name = '\\'

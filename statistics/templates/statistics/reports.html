@@ -1,13 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Отчеты</h2>
-<ul>
-{% for report in reports %}
-    <li>
-    <a href="{% url 'statistics:report' report.id%}">
-    {{report.title}}
-    </a>
-    </li>
-{% endfor %}
-</ul>
+<form action="#" method="post">
+    {% csrf_token %}
+    {{ form }}
+    <input type="submit" value="Submit" />
+</form>
 {% endblock content %}

@@ -19,7 +19,7 @@ EVENT_CHOICES = (
     ('VKR', 'Ввод из капремонта'),
     ('VSR', 'Ввод из ср. ремонта'),
     ('VRC', 'Ввод из реконструкции'),
-    ('ZMN', 'Замена'),
+    ('ZMN', 'Ввод после замены'),
     ('SPS', 'Списание'),
 )
 EVENT_CHOICES_DICT = dict(EVENT_CHOICES)
@@ -49,18 +49,24 @@ def default_stat():
 
 
 def stat_timedelta(time_delta):
-    sec = time_delta.total_seconds()
-    hours, remainder = divmod(sec, 3600)
-    minutes, sec = divmod(remainder, 60)
-    return '%d:%02d' % (int(hours), int(minutes))
+    if time_delta:
+        sec = time_delta.total_seconds()
+        hours, remainder = divmod(sec, 3600)
+        minutes, sec = divmod(remainder, 60)
+        return '%d:%02d' % (int(hours), int(minutes))
+    else:
+        return '-'
 
 
 def stat_timedelta_for_report(time_delta):
-    sec = time_delta.total_seconds()
-    hours, remainder = divmod(sec, 3600)
-    if remainder >= 1800:
-        hours += 1
-    return str(int(hours))
+    if time_delta:
+        sec = time_delta.total_seconds()
+        hours, remainder = divmod(sec, 3600)
+        if remainder >= 1800:
+            hours += 1
+        return str(int(hours))
+    else:
+        return '-'
 
 
 class Journal(models.Model):
@@ -232,15 +238,17 @@ class Journal(models.Model):
 
             recs = journal.record_set
             if date_from:
-                recs = recs.filter(date__gte=date_from)
+                # Время "от события" откатываем на месяц назад, поскольку
+                # капитальный и средный ремонты, замены и реконструкции
+                # длятся не менее месяца, а раньше интервалы фиксировались
+                # за месяц, что приводит к неверному расчету
+                recs = recs.filter(date__gte=date_from - timedelta(days=31))
             if date_to:
                 recs = recs.exclude(date__gte=date_to)
             if summary_type == 'PCN':
                 return recs.aggregate(models.Sum('pusk_cnt'))['pusk_cnt__sum']
             elif summary_type == 'OCN':
-                return recs.aggregate(
-                    models.Sum('ostanov_cnt')
-                )['ostanov_cnt__sum']
+                return recs.aggregate(models.Sum('ostanov_cnt'))['ostanov_cnt__sum']
             else:
                 return stat_timedelta_for_report(
                     recs.aggregate(models.Sum('work'))['work__sum']
@@ -356,7 +364,7 @@ class Report(models.Model):
     к группе оборудования, но не каждое оборудование имеет отчет.
     """
 
-    equipment = models.OneToOneField(Unit, on_delete=models.CASCADE)
+    equipment = models.OneToOneField(Unit, related_name='report', on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
     is_generalizing = models.BooleanField(default=False)
 
@@ -407,6 +415,21 @@ class Report(models.Model):
         titles = ['Оборудование'] + [col.title for col in columns]
         report_table = [titles] + report_table
         return report_table
+
+    def get_reports_collection(root_unit):
+        def unit_has_report(unit):
+            try:
+                if unit.report:
+                    return True
+            except Report.DoesNotExist:
+                return False
+
+        report_set = []
+        equipment_tree = root_unit.unit_tree()
+        for eq, ident in equipment_tree:
+            if unit_has_report(eq):
+                report_set.append((eq.report.id, eq.report.title))
+        return report_set
 
     class Meta:
         verbose_name = 'отчет'

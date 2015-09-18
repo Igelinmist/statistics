@@ -1,9 +1,12 @@
 from django.test import TestCase
 from datetime import date, timedelta
 
-from statistics.models import Journal
+from statistics.models import Report
 from statistics.tests import factories
-from .helpers_foo import prepare_journal_tree, form_data, prepare_test_data_and_report_conf, prepare_test_data_and_report_conf_for_subjournal
+from .helpers_foo import prepare_journal_tree, form_data
+from .helpers_foo import prepare_test_data_and_report_conf
+from .helpers_foo import prepare_test_data_and_report_conf_for_subjournal
+from .helpers_foo import prepare_journal_tree_records_report
 
 
 class JournalModelTest(TestCase):
@@ -107,7 +110,7 @@ class JournalModelTest(TestCase):
 
         self.assertEqual(
             journal_tree['full_journal'].get_report_cell(from_event='FVZ'),
-            '100'
+            '200'
         )
 
     def test_get_report_cell_itv_from_zamena(self):
@@ -122,7 +125,7 @@ class JournalModelTest(TestCase):
 
         self.assertEqual(
             test_journal.get_report_cell(from_event='FVZ'),
-            '60'
+            '100'
         )
 
     def test_get_report_cell_date_of_zamena(self):
@@ -175,7 +178,7 @@ class JournalModelTest(TestCase):
 
         self.assertEqual(
             test_journal.get_report_cell(from_event='FSR'),
-            '60'
+            '100'
         )
 
     def test_get_report_cell_date_of_srrem(self):
@@ -209,7 +212,7 @@ class JournalModelTest(TestCase):
 
         self.assertEqual(
             test_journal.get_report_cell(from_event='FKR'),
-            '60'
+            '100'
         )
 
     def test_get_report_cell_itv_from_kaprem_without_event(self):
@@ -262,7 +265,7 @@ class JournalModelTest(TestCase):
                 summary_type='PCN',
                 from_event='FVZ'
             ),
-            3
+            5
         )
 
     def test_get_report_cell_ocn_from_vvod(self):
@@ -280,7 +283,7 @@ class JournalModelTest(TestCase):
                 summary_type='OCN',
                 from_event='FVZ'
             ),
-            3
+            5
         )
 
     def test_get_report_cell_itv_from_vvod_for_subjournal(self):
@@ -309,7 +312,7 @@ class JournalModelTest(TestCase):
 
         self.assertEqual(
             journal_tree['subjournal'].get_report_cell(from_event='FVZ'),
-            '60'
+            '100'
         )
 
 
@@ -410,3 +413,30 @@ class ReportModelTest(TestCase):
                 [journal_tree['journal2'].id,
                  None],
             ])
+
+    def test_prepare_report_data(self):
+        """
+        Модель Report готовит данные отчета для вывода
+        проверяется порядок вывода, формат вывода,
+        правильность расчета
+        """
+        report = prepare_journal_tree_records_report()
+
+        self.assertEqual(
+            report.prepare_report_data(),
+            [['Оборудование', 'Наработка', 'Наработка с капремонта',
+              'Дата капремонта', 'Наработка detail1', 'Замена detail1'],
+             ['subunit1', '260', '10', '15.02.2015', '260', '-'],
+             ['subunit2', '164', '-', '-', '34', '15.02.2015']]
+        )
+
+    def test_get_reports_for_select(self):
+        """
+        Модель Report готовит список (rep_id, rep_title) для test_reports_for_select
+        """
+        report = prepare_journal_tree_records_report()
+
+        self.assertEqual(
+            Report.get_reports_collection(report.equipment),
+            [(report.id, 'Test Report'), ]
+        )
