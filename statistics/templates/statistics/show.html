@@ -50,12 +50,16 @@
                 {% else %}
                     {% if user.is_authenticated %}
                         <td>
+                            {% if perms.statistics.edit_journal_record %}
                             <a href="{% url 'statistics:record_edit' journal.id rec.id %}" class="btn btn-primary">
                                 <span class="glyphicon glyphicon-edit"></span>
                             </a>
+                            {% endif %}
+                            {% if perms.statistics.delete_journal_record %}
                             <a href="{% url 'statistics:record_delete' journal.id rec.id %}" class="btn btn-danger">
                                 <span class="glyphicon glyphicon-minus-sign"></span>
                             </a>
+                            {% endif %}
                         </td>
                     {% endif %}
                 {% endif %}
@@ -63,7 +67,7 @@
         {% endfor %}
         <tr><td>...</td></tr>
     </table>
-    {% if not journal.stat_by_parent and user.is_authenticated%}
+    {% if not journal.stat_by_parent and user.is_authenticated and perms.statistics.create_journal_record %}
         <a href="{% url 'statistics:record_new' journal.id %}" class="btn btn-primary">Добавить запись</a><br />
     {% endif %}
     <h3>Записи событий</h3>
@@ -78,14 +82,16 @@
                 <td>{{ event.date }}</td>
                 <td>{{ event.event|human_event }}</td>
                 <td>
+                    {% if user.is_authenticated and perms.statistics.delete_journal_event %}
                     <a href="{% url 'statistics:event_delete' journal.id event.id %}" class="btn btn-danger">
                         <span class="glyphicon glyphicon-minus-sign"></span>
                     </a>
+                    {% endif %}
                 </td>
             </tr>
         {% endfor %}
     </table>
-    {% if user.is_authenticated %}
+    {% if user.is_authenticated and perms.statistics.create_journal_event %}
         <form action="{% url 'statistics:event_new' journal.id %}" method="post" class="form-inline">
             {% csrf_token %}
             {{ form }}

@@ -1,6 +1,7 @@
 
 from django.shortcuts import get_object_or_404, render, redirect
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.contrib.auth.decorators import permission_required
 from datetime import datetime
 
 
@@ -88,6 +89,7 @@ def records(request, journal_id):
         {'records': records, 'journal': journal})
 
 
+@permission_required('statistics.create_journal_record', login_url='iplant_login')
 def record_create(request, journal_id):
     journal = get_object_or_404(Journal, pk=journal_id)
     form = RecordForm(request.POST or None, journal=journal)
@@ -99,6 +101,7 @@ def record_create(request, journal_id):
                   {'form': form, 'journal': journal, 'record_id': None})
 
 
+@permission_required('statistics.create_journal_record', login_url='iplant_login')
 def simple_record_create(request, journal_id):
     if request.is_ajax():
         journal = get_object_or_404(Journal, pk=journal_id)
@@ -117,6 +120,7 @@ def simple_record_create(request, journal_id):
     return JsonResponse(response)
 
 
+@permission_required('statistics.edit_journal_record', login_url='iplant_login')
 def record_update(request, journal_id, record_id):
     journal = get_object_or_404(Journal, pk=journal_id)
     form = RecordForm(request.POST or journal.get_record_data(record_id),
@@ -129,6 +133,7 @@ def record_update(request, journal_id, record_id):
                   {'form': form, 'journal': journal, 'record_id': record_id})
 
 
+@permission_required('statistics.delete_journal_record', login_url='iplant_login')
 def record_delete(request, journal_id, record_id):
     template_name = 'statistics/confirm_record_delete.html'
     journal = get_object_or_404(Journal, pk=journal_id)
@@ -138,6 +143,7 @@ def record_delete(request, journal_id, record_id):
     return render(request, template_name)
 
 
+@permission_required('statistics.create_journal_event', login_url='iplant_login')
 def event_create(request, journal_id):
     journal = get_object_or_404(Journal, pk=journal_id)
     form = EventForm(request.POST)
@@ -146,6 +152,7 @@ def event_create(request, journal_id):
     return redirect('statistics:show', journal_id=journal_id)
 
 
+@permission_required('statistics.delete_journal_event', login_url='iplant_login')
 def event_delete(request, journal_id, event_id):
     template_name = 'statistics/confirm_record_delete.html'
     event = get_object_or_404(EventItem, pk=event_id)
@@ -165,6 +172,7 @@ def reports(request):
             pass
     report_choices = Report.get_reports_collection(root)
     form = ChooseReportForm(choices=report_choices)
+
     return render(
         request,
         'statistics/reports.html',
@@ -173,28 +181,8 @@ def reports(request):
 
 def report_show(request):
     report = get_object_or_404(Report, pk=request.GET['report_id'])
-    report_query_date = datetime.strptime(
-        request.GET['date'],
-        '%d.%m.%Y'
-    ).strftime('%Y-%m-%d')
-    report_reportes = []
-    if report.is_generalizing:
-        for eq in report.equipment.unit_set.order_by('name').all():
-            try:
-                temp_report = eq.report
-                temp_report_table = temp_report.prepare_report_data(
-                    report_date=report_query_date
-                )
-                report_reportes.append((temp_report, temp_report_table))
-            except Report.DoesNotExist:
-                pass
-    else:
-        report_reportes.append(
-            (report,
-             report.prepare_report_data(report_date=report_query_date))
-        )
     context = {
-        'rdata': report_reportes,
+        'rdata': report.prepare_reports_content(request.GET['date']),
         'rdate': request.GET['date'],
     }
     return render(

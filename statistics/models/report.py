@@ -1,4 +1,5 @@
 from django.db import models
+from datetime import datetime
 
 from catalog.models import Unit
 from statistics.models.journal import Journal
@@ -28,6 +29,7 @@ class Report(models.Model):
         Unit, related_name='report', on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
     is_generalizing = models.BooleanField(default=False)
+    weigh = models.IntegerField(default=0)
 
     def __str__(self):
         return self.title
@@ -70,7 +72,7 @@ class Report(models.Model):
                     from_event=col.from_event,
                     summary_type=col.column_type,
                     date_to=report_date
-                )
+                ) if journals_id[indxr][indxc] else '-'
                 for (indxc, col) in enumerate(columns)
             ]
             for (indxr, subunit) in enumerate(subunits)
@@ -96,9 +98,40 @@ class Report(models.Model):
                 )
         return report_set
 
+    def prepare_reports_content(self, on_date=None):
+        """
+        Метод готовит одну или несколько таблиц отчетов,
+        в зависимости от того, является ли текущий отчет
+        обобщающим. Предполагается, что дата поступает
+        в российском формате, надо ее переводить в формат,
+        который переваривает django запрос.jc/
+        """
+        qdate = datetime.strptime(
+            on_date,
+            '%d.%m.%Y'
+        ).strftime('%Y-%m-%d') if on_date else None
+        report_reportes = []
+        if self.is_generalizing:
+            for eq in self.equipment.unit_set.order_by('name').all():
+                try:
+                    temp_report = eq.report
+                    temp_report_table = temp_report.prepare_report_data(
+                        report_date=qdate
+                    )
+                    report_reportes.append((temp_report, temp_report_table))
+                except Report.DoesNotExist:
+                    continue
+        else:
+            report_reportes.append(
+                (self,
+                 self.prepare_report_data(report_date=qdate))
+            )
+        return report_reportes
+
     class Meta:
         verbose_name = 'отчет'
         verbose_name_plural = 'отчеты'
+        default_permissions = []
 
 
 class Column(models.Model):
@@ -123,3 +156,4 @@ class Column(models.Model):
         verbose_name = 'столбец'
         verbose_name_plural = 'столбцы'
         ordering = ['weigh']
+        default_permissions = []

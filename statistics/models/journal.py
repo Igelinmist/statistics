@@ -71,6 +71,9 @@ class Journal(models.Model):
 
     class Meta:
         ordering = ['equipment__name']
+        verbose_name = 'журнал'
+        verbose_name_plural = 'журналы'
+        default_permissions = []
         permissions = (
             ('view_journal_details', 'Может просматривать записи журнала'),
             ('view_journal_list', 'Может посмотреть список журналов'),
@@ -80,9 +83,6 @@ class Journal(models.Model):
             ('create_journal_event', 'Может создать событие в журнале'),
             ('delete_journal_event', 'Может удалить событие в журнале'),
         )
-        default_permissions = []
-        verbose_name = 'журнал'
-        verbose_name_plural = 'журналы'
 
     def __str__(self):
         plant_name = self.equipment.plant.name if self.equipment.plant else '-'
@@ -315,6 +315,8 @@ class Record(models.Model):
 
     class Meta:
         default_permissions = []
+        verbose_name = 'запись'
+        verbose_name_plural = 'записи'
 
 
 class StateItem(models.Model):

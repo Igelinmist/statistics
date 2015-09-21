@@ -31,6 +31,9 @@ class JournalViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, '19:00')
 
+
+class ReportViewTests(TestCase):
+
     def test_reports_index_show(self):
         """
         Приложение показывает существующие отчеты
@@ -46,9 +49,9 @@ class JournalViewTests(TestCase):
         Приложение показывает отчет
         """
         report = prepare_test_db_for_report()['report']
-        response = self.client.get(reverse(
-            'statistics:report',
-            kwargs={'report_id': report.id})
+        response = self.client.get(
+            reverse('statistics:report_show'),
+            {'report_id': report.id, 'date': '01.09.2015'}
         )
 
         self.assertEqual(response.status_code, 200)

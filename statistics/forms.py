@@ -74,17 +74,12 @@ class ChooseReportForm(forms.Form):
                                        "pickTime": False}),
         label='На дату:',
     )
-    CHOICWS = ((1, 'test'), )
-    report_id = forms.ChoiceField(
-        widget=forms.Select,
-        label='отчет:',
-        choices=(),
-    )
 
     def __init__(self, choices=None, *args, **kwargs):
-        self.choices = kwargs.pop('choices', None)
         super(ChooseReportForm, self).__init__(*args, **kwargs)
         if choices:
-            self.fields['report_id'] = forms.ChoiceField(
-                widget=forms.Select, label='отчет:', choices=choices
+            self.fields.update(
+                {'report_id': forms.ChoiceField(widget=forms.Select,
+                                                label='отчет:',
+                                                choices=choices)}
             )

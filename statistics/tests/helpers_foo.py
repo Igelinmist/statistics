@@ -11,14 +11,13 @@ def prepare_journal_tree():
     detail11 = UnitFactory(plant_id=subunit1.id, name='detail1')
     detail12 = UnitFactory(plant_id=subunit1.id, name='detail2')
     detail21 = UnitFactory(plant_id=subunit2.id, name='detail1')
-    detail22 = UnitFactory(plant_id=subunit2.id, name='detail2_')
+    # Намеренно не создаем detail2 в subunit2
     full_journal = JournalFactory(equipment_id=subunit1.id, extended_stat=True)
     base_journal = JournalFactory(equipment_id=subunit2.id, extended_stat=False)
 
     subjournal = JournalFactory(equipment_id=detail11.id, stat_by_parent=True)
     JournalFactory(equipment_id=detail12.id, stat_by_parent=True)
     subjournal2 = JournalFactory(equipment_id=detail21.id, stat_by_parent=True)
-    JournalFactory(equipment_id=detail22.id, stat_by_parent=True)
     return {
         'full_journal': full_journal,
         'base_journal': base_journal,
@@ -29,8 +28,6 @@ def prepare_journal_tree():
         'unit_root': unit_root,
         'detail11': detail11,
         'detail12': detail12,
-        'detail21': detail21,
-        'detail22': detail22,
     }
 
 
@@ -159,6 +156,22 @@ def prepare_journal_tree_records_report():
         from_event='FVZ',
         element_name_filter='detail1',
         weigh=4,
+    )
+    ColumnFactory(
+        report_id=report.id,
+        title='Наработка detail2',
+        column_type='ITV',
+        from_event='FVZ',
+        element_name_filter='detail2',
+        weigh=5,
+    )
+    ColumnFactory(
+        report_id=report.id,
+        title='Замена detail2',
+        column_type='DT',
+        from_event='FVZ',
+        element_name_filter='detail2',
+        weigh=6,
     )
     return report
 

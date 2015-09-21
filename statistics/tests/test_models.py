@@ -425,9 +425,9 @@ class ReportModelTest(TestCase):
         self.assertEqual(
             report.prepare_report_data(),
             [['Оборудование', 'Наработка', 'Наработка с капремонта',
-              'Дата капремонта', 'Наработка detail1', 'Замена detail1'],
-             ['subunit1', '260', '10', '15.02.2015', '260', '-'],
-             ['subunit2', '164', '-', '-', '34', '15.02.2015']]
+              'Дата капремонта', 'Наработка detail1', 'Замена detail1', 'Наработка detail2', 'Замена detail2'],
+             ['subunit1', '260', '10', '15.02.2015', '260', '-', '260', '-'],
+             ['subunit2', '164', '-', '-', '34', '15.02.2015', '-', '-']]
         )
 
     def test_get_reports_for_select(self):

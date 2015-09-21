@@ -27,7 +27,7 @@
     <div class="container">
 
       <!-- Static navbar -->
-      <nav class="navbar navbar-default">
+      <nav class="navbar navbar-inverse">
         <div class="container-fluid">
           <div class="navbar-header">
             <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
@@ -45,13 +45,14 @@
                 <ul class="dropdown-menu">
                   <li><a href="{% url 'statistics:index' %}">Журналы</a></li>
                   <li><a href="{% url 'statistics:journals_on_date' %}">Ввод на дату</a></li>
+                  <li><a href="{% url 'statistics:reports' %}">Отчеты</a></li>
                 </ul>
               </li>
               <li><a href="/admin/">Администрирование</a></li>
             </ul>
             {% if user.is_authenticated %}
               <ul class="nav navbar-nav navbar-right">
-                <li><a href="{% url 'iplant_logout' %}?next={{ request.path }}" class="btn btn-default active">Выход {{ user.username }} </a></li>
+                <li><a href="{% url 'iplant_logout' %}?next={{ request.path }}" class="btn">Выход {{ user.username }} </a></li>
               </ul>
             {% else %}
               <form method="POST" action="{% url 'iplant_login' %}" class="navbar-form navbar-right">
