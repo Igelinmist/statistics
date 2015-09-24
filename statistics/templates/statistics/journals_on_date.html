@@ -52,8 +52,10 @@
                     <input type="number" name="ostanov_cnt" min="0" max="5" value="0" style="width: 40px;" />
                     {% if unit.0.journal.id in records_dict %}
                         {% with rec=records_dict|key:unit.0.journal.id %}
-                            <input type="hidden" name="record_id" value="{{ rec.1 }}">
+                            <input type="hidden" name="record_id" id="rec-id-journal-{{unit.0.journal.id}}" value="{{ rec.1 }}">
                         {% endwith %}
+                    {% else %}
+                        <input type="hidden" name="record_id" id="rec-id-journal-{{unit.0.journal.id}}" value="">
                     {% endif %}
                     <input type="submit" value="<<" class="btn btn-default"/>
                 </td>
@@ -94,7 +96,8 @@
                     type: $(this).attr('method'),
                     url: $(this).attr('action'),
                     success: function(data) {
-                        $("#work-interval-"+data.journal_id).html(data.work)
+                        $("#work-interval-"+data.journal_id).html(data.work);
+                        $("#rec-id-journal-"+data.journal_id).attr("value",data.rec_id);
                     }
                 });
                 return false;
@@ -107,7 +110,8 @@
                     data: urldata,
                     type: 'POST',
                     success: function(data) {
-                        $("#work-interval-"+urldata.journal_id).html(urldata.work)
+                        $("#work-interval-"+urldata.journal_id).html(urldata.work);
+                        $("#rec-id-journal-"+data.journal_id).attr("value",data.rec_id);
                     }
                 });
                 return false;
