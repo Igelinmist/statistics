@@ -2,10 +2,12 @@ from django.test import TestCase
 from datetime import date, timedelta
 
 from statistics.models.report import Report
+from statistics.models.journal import Journal
 from statistics.tests import factories
 from .helpers_foo import prepare_journal_tree, form_data
 from .helpers_foo import prepare_test_data_and_report_conf
 from .helpers_foo import prepare_test_data_and_report_conf_for_subjournal
+from .helpers_foo import prepare_journal_tree_records
 from .helpers_foo import prepare_journal_tree_records_report
 
 
@@ -313,6 +315,27 @@ class JournalModelTest(TestCase):
         self.assertEqual(
             journal_tree['subjournal'].get_report_cell(from_event='FVZ'),
             '100'
+        )
+
+    def test_get_journals_work_on_dates(self):
+        """
+        Модель Journal заполняет таблицу для показа статистики
+        работы по всем журналам на несколько дат
+        """
+        journal_tree = prepare_journal_tree_records()
+        res = Journal.get_journals_work_on_dates(
+            root_unit=journal_tree['unit_root'],
+            start_date=date(2015, 2, 16),
+            days_cnt=3
+        )
+
+        self.assertEqual(
+            res,
+            [
+                ['2015-02-16', '2015-02-17', '2015-02-18'],
+                ['unit_root'], ['--subunit1', '-', '-', '-'],
+                ['--subunit2', '24:00', '-', '-']
+            ]
         )
 
 

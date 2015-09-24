@@ -61,7 +61,7 @@ class Journal(models.Model):
     по конкретному оборудованию
     """
 
-    equipment = models.OneToOneField(Unit, on_delete=models.CASCADE)
+    equipment = models.OneToOneField(Unit, on_delete=models.CASCADE, related_name='journal')
     extended_stat = models.BooleanField(default=False)
     stat_by_parent = models.BooleanField(default=False)
     description = models.TextField(blank=True)
@@ -83,6 +83,48 @@ class Journal(models.Model):
             ('create_journal_event', 'Может создать событие в журнале'),
             ('delete_journal_event', 'Может удалить событие в журнале'),
         )
+
+    def unit_get_journal(unit):
+        try:
+            return unit.journal
+        except Journal.DoesNotExist:
+            return None
+
+    def unit_has_journal(unit):
+        try:
+            if unit.journal:
+                return True
+        except Journal.DoesNotExist:
+            return False
+
+    def get_journals_work_on_dates(root_unit, start_date, days_cnt):
+        """
+        Метод класса Journal предназначен для страницы мультижурнального
+        ввода продолжительности работы оборудования для мультидат.
+        Метод формирует таблицу текущего состояния по введенным данным
+        """
+        res = []
+        unit_tree = root_unit.unit_tree()
+        # получаем словарь словарей имеющихся записей для журналов
+        wd = Record.get_records_on_dates(unit_tree, start_date, days_cnt)
+        res.append(wd['dates'])
+        # для каждой единицы оборудования в дереве
+        for unit, ident in unit_tree:
+            if Journal.unit_has_journal(unit):
+                if unit.journal.stat_by_parent:
+                    continue
+                jstr = ['--' * ident + unit.name]
+                # для каждой даты (формат "дд.мм.ГГГГ")
+                for dkey in wd['dates']:
+                    jkey = str(unit.journal.id)
+                    if dkey in wd[jkey].keys():
+                        jstr.append(wd[jkey][dkey])
+                    else:
+                        jstr.append('-')
+                res += [jstr]
+            else:
+                res.append(['--' * ident + unit.name])
+        return res
 
     def __str__(self):
         plant_name = self.equipment.plant.name if self.equipment.plant else '-'
@@ -312,6 +354,30 @@ class Record(models.Model):
         }
         res_dict['date'] = slice_date
         return res_dict
+
+    def get_records_on_dates(unit_tree, start_date, days_cnt):
+        """
+        Метод класса Record готовит словарь словарей наработки оборудования
+        из журналов (тех, что имеют статистику) на даты для дерева оборудования
+        """
+        res = {}
+        date_list = [
+            (start_date + timedelta(days=dc)).strftime("%Y-%m-%d")
+            for dc in range(days_cnt)
+        ]
+        res.update(dict(dates=date_list))
+        recordsDataSet = Record.objects.filter(date__in=date_list)
+        for uitem, ident in unit_tree:
+            try:
+                journal_key = str(uitem.journal.id)
+                work_on_dates_dict = {}
+                for rec in recordsDataSet.filter(journal_id=uitem.journal.id).all():
+                    date_key = rec.date.strftime("%Y-%m-%d")
+                    work_on_dates_dict.update({date_key: stat_timedelta(rec.work)})
+                res.update({journal_key: work_on_dates_dict})
+            except Journal.DoesNotExist:
+                continue
+        return res
 
     class Meta:
         default_permissions = []

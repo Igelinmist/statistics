@@ -28,6 +28,7 @@ def prepare_journal_tree():
         'unit_root': unit_root,
         'detail11': detail11,
         'detail12': detail12,
+        'detail21': detail21,
     }
 
 

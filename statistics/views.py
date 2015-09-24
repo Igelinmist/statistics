@@ -28,6 +28,7 @@ def index(request):
     return render(request, 'statistics/index.html', context)
 
 
+@permission_required('statistics.create_journal_record', login_url='iplant_login')
 def journals_on_date(request):
     root = Unit.objects.filter(plant=None)[0]
     if request.user.is_authenticated():
@@ -38,19 +39,16 @@ def journals_on_date(request):
             pass
     unit_list = root.unit_tree()
     if 'date' in request.POST:
-        jourlnal_date = request.POST['date']
+        journal_date = request.POST['date']
         request.session['input_date'] = request.POST['date']
     elif 'input_date' in request.session:
-        jourlnal_date = request.session['input_date']
+        journal_date = request.session['input_date']
     else:
-        jourlnal_date = None
+        journal_date = None
 
-    records_dict = Record.get_records_on_date(jourlnal_date)
+    records_dict = Record.get_records_on_date(journal_date)
     form_date = ChooseDateForm()
-    context = {
-        'equipment_list': unit_list,
-        'records_dict': records_dict,
-        'form_date': form_date}
+    context = dict(equipment_list=unit_list, records_dict=records_dict, form_date=form_date)
     return render(request, 'statistics/journals_on_date.html', context)
 
 
