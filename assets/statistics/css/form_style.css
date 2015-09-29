@@ -1,0 +1,10 @@
+.field {
+    clear: both;
+    text-align: right;
+}
+label {
+    float: left;
+}
+.main {
+    float: left;
+}

@@ -34,8 +34,14 @@ def default_stat():
     return "wd=00:00,psk=0,ost=0"
 
 
+def change_date(inp_date, days_cnt):
+    return (datetime.strptime(
+        inp_date, '%d.%m.%Y') + timedelta(days_cnt)
+    ).strftime('%d.%m.%Y')
+
+
 def stat_timedelta(time_delta):
-    if time_delta:
+    if time_delta or time_delta == timedelta(0):
         sec = time_delta.total_seconds()
         hours, remainder = divmod(sec, 3600)
         minutes, sec = divmod(remainder, 60)
@@ -53,6 +59,11 @@ def stat_timedelta_for_report(time_delta):
         return str(int(hours))
     else:
         return '-'
+
+
+def date2req(rus_date):
+    date_comp = rus_date.split('.')
+    return '{2}-{1}-{0}'.format(*date_comp)
 
 
 class Journal(models.Model):
@@ -138,15 +149,33 @@ class Journal(models.Model):
         data = {}
         if record_id:
             rec = self.record_set.get(pk=record_id)
-            for name in STANDARD_STATE_DATA:
-                data[name] = rec.__getattribute__(name)
+            # for name in STANDARD_STATE_DATA:
+            #     data[name] = rec.__getattribute__(name)
+            data['date'] = rec.date.strftime('%d.%m.%Y')
+            data['work'] = stat_timedelta(rec.work)
+            data['pusk_cnt'] = rec.pusk_cnt
+            data['ostanov_cnt'] = rec.ostanov_cnt
             if self.extended_stat:
+                # сначала инициализация всего набора
                 for state in EXT_STATE_DATA:
-                    data[state] = timedelta(seconds=0)
+                    data[state] = stat_timedelta(timedelta(seconds=0))
+                # потом ненулевых состояний
                 for state_item in rec.stateitem_set.all():
-                    data[state_item.state.lower()] = state_item.time_in_state
+                    data[state_item.state.lower()] = stat_timedelta(state_item.time_in_state)
             return data
         else:
+            return None
+
+    def rec_on_date(self, dt):
+        """
+        Предполагается входной формат даты Python
+        Дата преобразуется в формат для запроса.
+        Результат метода либо запись, либо None
+        """
+        req_date = dt.strftime('%Y-%m-%d')
+        try:
+            return self.record_set.filter(date=req_date).all()[0]
+        except IndexError:
             return None
 
     def get_state_summary(self, date_from=None, date_to=None):
@@ -183,33 +212,38 @@ class Journal(models.Model):
                 unit.journal.save()
 
     def set_record_data(self, data, record_id=None, process_ext_states=True):
-        if record_id:
-            rec = Record.objects.get(pk=record_id)
-            changed_fields = []
-            for name in STANDARD_STATE_DATA:
-                if rec.__getattribute__(name) != data[name]:
-                    changed_fields.append(name)
-                    rec.__setattr__(name, data[name])
-            if self.extended_stat and process_ext_states:
-                rec.stateitem_set.all().delete()
-                for state_name in EXT_STATE_DATA:
-                    if data[state_name]:
-                        rec.stateitem_set.create(
-                            state=state_name.upper(),
-                            time_in_state=data[state_name])
-            rec.save(update_fields=changed_fields)
-        else:
-            rec = self.record_set.create(
-                date=data['date'],
-                work=data['work'],
-                ostanov_cnt=data['ostanov_cnt'],
-                pusk_cnt=data['pusk_cnt'],)
-            if self.extended_stat and process_ext_states:
-                for state_name in EXT_STATE_DATA:
-                    if data[state_name]:
-                        rec.stateitem_set.create(
-                            state=state_name.upper(),
-                            time_in_state=data[state_name])
+        # Если не задан номер записи для изменения надо проверить дублирование
+        if not record_id:
+            try:
+                record_id = self.record_set.filter(date=data['date']).all()[0].id
+            except IndexError:
+                # точно нет записи - создаем
+                rec = self.record_set.create(
+                    date=data['date'],
+                    work=data['work'],
+                    ostanov_cnt=data['ostanov_cnt'],
+                    pusk_cnt=data['pusk_cnt'],)
+                if self.extended_stat and process_ext_states:
+                    for state_name in EXT_STATE_DATA:
+                        if data[state_name]:
+                            rec.stateitem_set.create(
+                                state=state_name.upper(),
+                                time_in_state=data[state_name])
+                return rec
+        rec = Record.objects.get(pk=record_id)
+        changed_fields = []
+        for name in STANDARD_STATE_DATA:
+            if rec.__getattribute__(name) != data[name]:
+                changed_fields.append(name)
+                rec.__setattr__(name, data[name])
+        if self.extended_stat and process_ext_states:
+            rec.stateitem_set.all().delete()
+            for state_name in EXT_STATE_DATA:
+                if data[state_name]:
+                    rec.stateitem_set.create(
+                        state=state_name.upper(),
+                        time_in_state=data[state_name])
+        rec.save(update_fields=changed_fields)
         self.update_state_cache()
         return rec
 
@@ -269,7 +303,7 @@ class Journal(models.Model):
                 # Время "от события" откатываем на месяц назад, поскольку
                 # капитальный и средный ремонты, замены и реконструкции
                 # длятся не менее месяца, а раньше интервалы фиксировались
-                # за месяц, что приводит к неверному расчету
+                # за месяц или год, что приводит к неверному расчету
                 recs = recs.filter(date__gte=date_from - timedelta(days=31))
             if date_to:
                 recs = recs.exclude(date__gte=date_to)

@@ -38,6 +38,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'bootstrap3_datetime',
+    'widget_tweaks',
     'django_nose',
     'catalog',
     'statistics',
