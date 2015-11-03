@@ -3,6 +3,7 @@ from django.core.urlresolvers import reverse
 
 from .helpers_foo import prepare_journal_tree, form_data
 from .helpers_foo import prepare_test_db_for_report
+from .helpers_foo import prepare_journal_tree_records
 
 
 class JournalViewTests(TestCase):
@@ -30,6 +31,13 @@ class JournalViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, '19:00')
+
+    def test_journals_write(self):
+        tree_records = prepare_journal_tree_records()
+        response = self.client.get(
+            reverse('statistics:journals_write'))
+
+        self.assertEqual(response.status_code, 200)
 
 
 class ReportViewTests(TestCase):

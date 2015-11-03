@@ -66,6 +66,23 @@ class Unit(models.Model):
         get_tree(knot_dict, tree, 0, self)
         return tree
 
+    def get_records(self, rdate):
+        """
+        Метод ищет существующие записи на дату в журналах,
+        входящих в дерево от данного оборудования.
+        """
+        #TODO доделать
+        records = {}
+        unit_tree = self.unit_tree()
+        for unit, ident in unit_tree:
+            pass
+        journals_id = [u.journal.id for u, i in unit_tree]
+        rec_set = Record.objects.filter(date=reqdate(rdate))
+        rec_set = rec_set.filter(journal_id__in=journals_id)
+        for rec in rec_set.all():
+            records[rec.journal_id] = rec.get_data()
+        return records
+
     def __str__(self):
         if self.plant is None:
             plant_name = '\\'

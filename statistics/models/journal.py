@@ -3,6 +3,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 
 from catalog.models import Unit
+from statistics.helpers import default_stat, stat_timedelta, stat_timedelta_for_report, reqdate
 
 
 STATE_CHOICES = (
@@ -27,43 +28,6 @@ EVENT_CHOICES_DICT = dict(EVENT_CHOICES)
 STANDARD_STATE_DATA = ('date', 'work', 'ostanov_cnt', 'pusk_cnt')
 
 EXT_STATE_DATA = ('rsv', 'arm', 'trm', 'krm', 'srm', 'rcd')
-
-
-# Common functions
-def default_stat():
-    return "wd=00:00,psk=0,ost=0"
-
-
-def change_date(inp_date, days_cnt):
-    return (datetime.strptime(
-        inp_date, '%d.%m.%Y') + timedelta(days_cnt)
-    ).strftime('%d.%m.%Y')
-
-
-def stat_timedelta(time_delta):
-    if time_delta or time_delta == timedelta(0):
-        sec = time_delta.total_seconds()
-        hours, remainder = divmod(sec, 3600)
-        minutes, sec = divmod(remainder, 60)
-        return '%d:%02d' % (int(hours), int(minutes))
-    else:
-        return '-'
-
-
-def stat_timedelta_for_report(time_delta):
-    if time_delta:
-        sec = time_delta.total_seconds()
-        hours, remainder = divmod(sec, 3600)
-        if remainder >= 1800:
-            hours += 1
-        return str(int(hours))
-    else:
-        return '-'
-
-
-def date2req(rus_date):
-    date_comp = rus_date.split('.')
-    return '{2}-{1}-{0}'.format(*date_comp)
 
 
 class Journal(models.Model):
@@ -141,16 +105,24 @@ class Journal(models.Model):
         plant_name = self.equipment.plant.name if self.equipment.plant else '-'
         return plant_name + ' \ ' + self.equipment.name
 
-    def get_record_data(self, record_id=None):
+
+# Текущий конец рефакторинга для методов объектов Journal
+# *******************************************************
+
+
+    def get_record_data(self, record_id=None, rdate=None):
         """
         Description: Метод получения данных для инициализации полей формы
         существующей записью, включая расширенные состояния при наличии
         """
-        data = {}
+        if not record_id and rdate:
+            try:
+                record_id = self.record_set.filter(date=rdate)[0].id
+            except IndexError:
+                return None
         if record_id:
+            data = {}
             rec = self.record_set.get(pk=record_id)
-            # for name in STANDARD_STATE_DATA:
-            #     data[name] = rec.__getattribute__(name)
             data['date'] = rec.date.strftime('%d.%m.%Y')
             data['work'] = stat_timedelta(rec.work)
             data['pusk_cnt'] = rec.pusk_cnt
@@ -158,7 +130,7 @@ class Journal(models.Model):
             if self.extended_stat:
                 # сначала инициализация всего набора
                 for state in EXT_STATE_DATA:
-                    data[state] = stat_timedelta(timedelta(seconds=0))
+                    data[state] = '0:00'
                 # потом ненулевых состояний
                 for state_item in rec.stateitem_set.all():
                     data[state_item.state.lower()] = stat_timedelta(state_item.time_in_state)
@@ -166,13 +138,16 @@ class Journal(models.Model):
         else:
             return None
 
+
+
+
+
     def rec_on_date(self, dt):
         """
-        Предполагается входной формат даты Python
         Дата преобразуется в формат для запроса.
         Результат метода либо запись, либо None
         """
-        req_date = dt.strftime('%Y-%m-%d')
+        req_date = reqdate(dt)
         try:
             return self.record_set.filter(date=req_date).all()[0]
         except IndexError:
@@ -229,6 +204,7 @@ class Journal(models.Model):
                             rec.stateitem_set.create(
                                 state=state_name.upper(),
                                 time_in_state=data[state_name])
+                self.update_state_cache()
                 return rec
         rec = Record.objects.get(pk=record_id)
         changed_fields = []
@@ -412,6 +388,19 @@ class Record(models.Model):
             except Journal.DoesNotExist:
                 continue
         return res
+
+    def get_data(self):
+        """
+        Метод подготовки всех данных записи и выдачи в виде словаря.
+        Продолжительность приведена в строках
+        """
+        rec_data = {'record_id': self.id}
+        for name in STANDARD_STATE_DATA:
+            rec_data[name] = self.__getattribute__[name]
+        rec_data.update(dict.fromkeys(EXT_STATE_DATA, '0:00'))
+        for ext_state in self.stateitem_set.all():
+            rec_data[ext_state.state.lower()] = stat_timedelta(ext_state.time_in_state)
+        return rec_data
 
     class Meta:
         default_permissions = []

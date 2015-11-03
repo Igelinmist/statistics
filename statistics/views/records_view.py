@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from django.http import JsonResponse
 
 from statistics.models.journal import Journal
+# from statistics.helpers import date2req
 
 from statistics.forms import RecordForm
 
@@ -119,19 +120,17 @@ def record_delete(request, journal_id, record_id):
 @permission_required('statistics.create_journal_record',
                      login_url='iplant_login')
 def simple_record_create(request, journal_id):
+    journal = get_object_or_404(Journal, pk=journal_id)
     if request.is_ajax():
-        journal = get_object_or_404(Journal, pk=journal_id)
-        record_fields = ('date', 'work', 'pusk_cnt', 'ostanov_cnt')
-        data = {key: request.POST[key] for key in record_fields}
-        data['date'] = datetime.strptime(request.POST['date'], '%d.%m.%Y')
-        rec = journal.set_record_data(
-            data,
-            record_id=request.POST.get('record_id', None),
-            process_ext_states=False)
-        response = {'journal_id': journal.id,
-                    'work': rec.work,
-                    'rec_id': rec.id,
-                    }
+        form = RecordForm(request.POST, extended_stat=journal.extended_stat)
+        if form.is_valid():
+            rec = journal.set_record_data(form.cleaned_data)
+            response = {'journal_id': journal.id,
+                        'work': rec.work,
+                        'rec_id': rec.id,
+                        }
+        else:
+            response = "bad Record data"
     else:
         response = "not AJAX!"
     return JsonResponse(response)

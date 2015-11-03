@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import permission_required
 from statistics.models.journal import Journal, Record
 from statistics.forms import EventForm, ChooseDateForm
 from catalog.models import Unit
+from statistics.helpers import yesterday_local
 
 
 def index(request):
@@ -23,7 +24,7 @@ def index(request):
 @permission_required('statistics.create_journal_record',
                      login_url='iplant_login')
 def journals_on_date(request):
-    root = Unit.objects.filter(plant=None)[0]
+    root = Unit.objects.filter(plant=None).all()[0]
     if request.user.is_authenticated():
         try:
             root = Unit.objects.get(name=request.user.profile.
@@ -45,6 +46,32 @@ def journals_on_date(request):
                    records_dict=records_dict,
                    form_date=form_date)
     return render(request, 'statistics/journals_on_date.html', context)
+
+
+@permission_required('statistics.create_journal_record',
+                     login_url='iplant_login')
+def journals_write(request):
+    try:
+        root = Unit.objects.get(name=request.user.profile.
+                                responsible_for_equipment.name)
+    except AttributeError:
+        root = Unit.objects.filter(plant=None).all()[0]
+    unit_tree = root.unit_tree()
+    if 'date' in request.GET:
+        write_date = request.GET['date']
+        request.session['input_date'] = request.GET['date']
+    elif 'input_date' in request.session:
+        write_date = request.session['input_date']
+    else:
+        write_date = yesterday_local()
+    available_recs = root.journal.get_records(write_date)
+    form_date = ChooseDateForm(initials={'date': write_date})
+    context = {
+        'equipment_list': unit_tree,
+        'available_recs': available_recs,
+        'form_date': form_date
+    }
+    return render(request, 'statistics/journals_write.html', context)
 
 
 def show(request, journal_id):

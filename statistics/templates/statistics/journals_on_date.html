@@ -19,50 +19,78 @@
     </form>
 
 <table class="table table-condensed table-hover">
-    {% for unit in equipment_list %}
+    {% for unit, ident in equipment_list %}
         <tr>
-        {% if unit.0.journal %}
-            {% if not unit.0.journal.stat_by_parent %}
+        {% if unit.journal %}
+            {% if not unit.journal.stat_by_parent %}
                 <td>
-                    <a href="{% url 'statistics:show' unit.0.journal.id %}">{{ unit.1|make_ident }}<strong>{{ unit.0.name }}</strong></a>
+                    <a href="{% url 'statistics:show' unit.journal.id %}">{{ ident|make_ident }}<strong>{{ unit.name }}</strong></a>
                 </td>
-                <form class="simple-record-form" action="{% url 'statistics:simple_record_new' unit.0.journal.id %}" method="POST" role="form">
+                <form class="simple-record-form form-inline" action="{% url 'statistics:simple_record_new' unit.journal.id %}" method="POST" role="form">
                 <td>
                     {% csrf_token %}
-                    <input type="hidden" name="journal_id" value="{{ unit.0.journal.id }}" />
+                    <input type="hidden" name="journal_id" value="{{ unit.journal.id }}" />
                     <input type="date" name="date" class="records_date" value="{{ records_dict.date|date:'d.m.Y' }}" readonly size="10" />
                 </td>
-                <td id="work-interval-{{unit.0.journal.id}}">
-                    {% if unit.0.journal.id in records_dict %}
-                        {% with rec=records_dict|key:unit.0.journal.id %}
-                            {{ rec.0|interval }}
-                        {% endwith %}
+                    {% if unit.journal.extended_stat %}
+                        <td colspan="2" class="row">
+                            <div class="form-group col-md-10">
+                                <input type="text" name="work" class="work_times" value="00:00" size="3" />
+                                <button type="button" class="bnt btn-primary easy-input">&lt; 24РБ</button>
+                                <input type="text" name="rsv" class="rsv_times" value="00:00" size="3" />
+                                <button type="button" class="bnt btn-primary easy-input">&lt; 24РЗ</button>
+                                <input type="text" name="trm" class="trm_times" value="00:00" size="3" />
+                                <button type="button" class="bnt btn-primary easy-input">&lt; 24ТР</button>
+                                <input type="text" name="arm" class="arm_times" value="00:00" size="3" />
+                                <button type="button" class="bnt btn-primary easy-input">&lt; 24АР</button><br />
+                                <input type="text" name="krm" class="krm_times" value="00:00" size="3" />
+                                <button type="button" class="bnt btn-primary easy-input">&lt; 24КР</button>
+                                <input type="text" name="srm" class="srm_times" value="00:00" size="3" />
+                                <button type="button" class="bnt btn-primary easy-input">&lt; 24СР</button>
+                                <input type="text" name="rcd" class="rcd_times" value="00:00" size="3" />
+                                <button type="button" class="bnt btn-primary easy-input">&lt; 24РК</button>
+                                П:
+                                <input type="number" name="pusk_cnt" min="0" max="5" value="0" style="width: 40px;" />
+                                О:
+                                <input type="number" name="ostanov_cnt" min="0" max="5" value="0" style="width: 40px;" />
+                            </div>
+                            <div class="form-group col-md-2">
+                                <button type="submit" value="apply" name="submit" class="btn btn-default">oK</button>
+                            </div>
+                        </td>
                     {% else %}
-                        нет данных
+                        <td id="work-interval-{{unit.journal.id}}">
+                            {% if unit.journal.id in records_dict %}
+                                {% with rec=records_dict|key:unit.journal.id %}
+                                    {{ rec.0|interval }}
+                                {% endwith %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            Работа:
+                            <button type="button" class="btn btn-default just-work" data-journal_id="{{ unit.journal.id }}" data-date="{{ records_dict.date|date:'d.m.Y' }}" data-work="24:00" data-pusk_cnt="0" data-ostanov_cnt="0">24:</button>
+                            или
+                            <input type="text" name="work" class="work_times" value="00:00" size="5" />
+                            Пуски:
+                            <input type="number" name="pusk_cnt" min="0" max="5" value="0" style="width: 40px;" />
+                            Остановы:
+                            <input type="number" name="ostanov_cnt" min="0" max="5" value="0" style="width: 40px;" />
+                            {% if unit.journal.id in records_dict %}
+                                {% with rec=records_dict|key:unit.journal.id %}
+                                    <input type="hidden" name="record_id" id="rec-id-journal-{{unit.journal.id}}" value="{{ rec.1 }}">
+                                {% endwith %}
+                            {% else %}
+                                <input type="hidden" name="record_id" id="rec-id-journal-{{unit.journal.id}}" value="">
+                            {% endif %}
+                            <input type="submit" value="<<" class="btn btn-default"/>
+                        </td>
                     {% endif %}
-                </td>
-                <td>
-                    Работа:
-                    <button type="button" class="btn btn-default just-work" data-journal_id="{{ unit.0.journal.id }}" data-date="{{ records_dict.date|date:'d.m.Y' }}" data-work="24:00" data-pusk_cnt="0" data-ostanov_cnt="0">24:</button>
-                    или
-                    <input type="text" name="work" class="work_times" value="00:00" size="5" />
-                    Пуски:
-                    <input type="number" name="pusk_cnt" min="0" max="5" value="0" style="width: 40px;" />
-                    Остановы:
-                    <input type="number" name="ostanov_cnt" min="0" max="5" value="0" style="width: 40px;" />
-                    {% if unit.0.journal.id in records_dict %}
-                        {% with rec=records_dict|key:unit.0.journal.id %}
-                            <input type="hidden" name="record_id" id="rec-id-journal-{{unit.0.journal.id}}" value="{{ rec.1 }}">
-                        {% endwith %}
-                    {% else %}
-                        <input type="hidden" name="record_id" id="rec-id-journal-{{unit.0.journal.id}}" value="">
-                    {% endif %}
-                    <input type="submit" value="<<" class="btn btn-default"/>
-                </td>
                 </form>
             {% endif %}
         {% else %}
-            <td colspan="4"><h3>{{ unit.1|make_ident }}{{ unit.0.name }}</h3></td>
+            <td colspan="4"><h3>{{ ident|make_ident }}{{ unit.name }}</h3></td>
         {% endif %}
         </tr>
     {% endfor %}
@@ -115,6 +143,10 @@
                     }
                 });
                 return false;
+            });
+            $('.easy-input').bind('click', function(e) {
+                e.preventDefault();
+                $(this).prev().val('24:00');
             });
         });
     </script>

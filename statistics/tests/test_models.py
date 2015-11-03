@@ -2,7 +2,7 @@ from django.test import TestCase
 from datetime import date, timedelta
 
 from statistics.models.report import Report
-from statistics.models.journal import Journal
+from statistics.models.journal import Journal, stat_timedelta
 from statistics.tests import factories
 from .helpers_foo import prepare_journal_tree, form_data
 from .helpers_foo import prepare_test_data_and_report_conf
@@ -74,8 +74,8 @@ class JournalModelTest(TestCase):
 
         self.assertEqual(
             fdata,
-            {'date': date.today()-timedelta(days=1),
-             'work': timedelta(hours=5),
+            {'date': (date.today()-timedelta(days=1)).strftime('%d.%m.%Y'),
+             'work': stat_timedelta(timedelta(hours=5)),
              'pusk_cnt': 1,
              'ostanov_cnt': 1})
 
@@ -90,14 +90,14 @@ class JournalModelTest(TestCase):
 
         self.assertEqual(
             fdata,
-            {'date': date.today()-timedelta(days=1),
-             'work': timedelta(hours=5),
-             'arm': timedelta(hours=19),
-             'trm': timedelta(0),
-             'krm': timedelta(0),
-             'rsv': timedelta(0),
-             'srm': timedelta(0),
-             'rcd': timedelta(0),
+            {'date': (date.today()-timedelta(days=1)).strftime('%d.%m.%Y'),
+             'work': stat_timedelta(timedelta(hours=5)),
+             'arm': stat_timedelta(timedelta(hours=19)),
+             'trm': '0:00',
+             'krm': '0:00',
+             'rsv': '0:00',
+             'srm': '0:00',
+             'rcd': '0:00',
              'pusk_cnt': 1,
              'ostanov_cnt': 1})
 
