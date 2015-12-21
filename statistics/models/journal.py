@@ -247,7 +247,6 @@ class Journal(models.Model):
                 return subunit.journal.id if subunit.journal else None
             except IndexError:
                 return None
-
         else:
             return self.id
 
